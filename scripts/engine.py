@@ -1,3 +1,5 @@
+import math
+
 import pygame.font
 from scripts import planes
 from scripts.projectiles import *
@@ -332,40 +334,51 @@ class NormalEnemy2(Enemy):
             self.image = enemy_normal2_frames[self.frame_index]
         super().draw()
 
+
 class FollowingEnemy(Enemy):
     def __init__(self, pos):
         enemy_projectiles = EnemyProjectiles([], 0, display, 99999)
         image = following_enemy_img
         health = 35
-        speed = 1.25
-        self.base_speed = speed*2
+        speed = 2
+        self.base_speed = speed * 2
         self.frame_delay = 120
         self.next_frame = time.time() * 1000
         self.frame_index = 0
+        self.base_image = image
+        self.current_angle = 0
         hitbox = [pygame.Rect((0, 25, 55, 27)),
                   pygame.Rect((15, 0, 25, 69))]
         super().__init__(speed, health, enemy_projectiles, image, pos, hitbox)
 
     def draw(self):
-        if display.get_rect().colliderect(self.hitbox[0]):  # TODO: change this cuz it dosent work ik u will understand future me
+        if display.get_rect().colliderect(
+                pygame.Rect(self.hitbox[0].x+self.pos[0], self.hitbox[0].y+self.pos[1],
+                            self.hitbox[0].w, self.hitbox[0].h)):
             self.speed = 0
         if self.speed == 0:
-            angle = angle_between_points(self.pos, player.abs_pos)
-            motion = angle_to_motion(angle, 2)
-            if self.pos[1] < player.abs_pos[1]:
+            if self.pos[1] > player.pos[1]:
+                angle = 90
+            else:
+                angle = angle_between_points(self.pos, player.pos)
+            self.current_angle += (angle-self.current_angle)/15
+            motion = angle_to_motion(self.current_angle, self.base_speed)
+            if self.pos[1] < player.pos[1]:
                 self.pos[0] += motion[0]
             self.pos[1] += self.base_speed
-            
-
+            self.image = pivot_rotate(self.base_image, self.current_angle-90, (self.base_image.get_width()/2,
+                                                                                  self.base_image.get_height()/2),
+                                      pygame.Vector2(0, 0))[0]
         super().draw()
+
 
 class RotatingEnemy(Enemy):
     def __init__(self, pos):
-        enemy_projectiles = EnemyProjectiles([], 0, display, 99999)
+        enemy_projectiles = RotatingEnemyProjectiles(display)
         image = rotating_enemy_frames[0]
         health = 35
-        speed = 1
-        self.frame_delay = 180
+        speed = 1.5
+        self.frame_delay = 140
         self.next_frame = time.time() * 1000
         self.frame_index = 0
         self.current_image = image
@@ -386,8 +399,9 @@ class RotatingEnemy(Enemy):
             self.alive = False
             self.on_death()
         if self.alive:
-            display.blit(self.current_image, (self.pos[0]-self.current_image.get_width()/2+self.image.get_width()/2,
-                                    self.pos[1]))
+            display.blit(self.current_image,
+                         (self.pos[0] - self.current_image.get_width() / 2 + self.image.get_width() / 2,
+                          self.pos[1]))
         if self.alive and self.pos[1] >= 0 and self.auto_shoot:
             self.projectiles.shoot(self.pos[0], self.pos[1])
         self.projectiles.draw(display, player)
@@ -405,7 +419,7 @@ class RotatingEnemy(Enemy):
                     pygame.draw.rect(display, (255, 0, 0), (self.pos[0] + box.x, self.pos[1] + box.y, box.w, box.h))
 
 
-class LaserEnemy(Enemy): # TODO
+class LaserEnemy(Enemy):  # TODO
     def __init__(self, pos):
         enemy_projectiles = EnemyProjectiles([], 0, display, 99999)
         self.image_scale = 0.75

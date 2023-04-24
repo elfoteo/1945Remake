@@ -13,19 +13,19 @@ for i in range(10):
     cy -= random.randint(50, 250)
     a = random.randint(0, 5)
     if a == 0:
-        enemies.append(FollowingEnemy([
+        enemies.append(RotatingEnemy([
             random.randint(enemy_normal_img.get_width(), display.get_width() - enemy_normal_img.get_width()), cy]))
     elif a == 1:
-        enemies.append(FollowingEnemy([
+        enemies.append(RotatingEnemy([
             random.randint(enemy_normal_img.get_width(), display.get_width() - enemy_normal_img.get_width()), cy]))
     elif a == 2:
-        enemies.append(FollowingEnemy([
+        enemies.append(RotatingEnemy([
             random.randint(enemy_normal_img.get_width(), display.get_width() - enemy_normal_img.get_width()), cy]))
     elif a == 3:
-        enemies.append(FollowingEnemy([
+        enemies.append(RotatingEnemy([
             random.randint(enemy_normal_img.get_width(), display.get_width() - enemy_normal_img.get_width()), cy]))
     elif a == 5:
-        enemies.append(FollowingEnemy([
+        enemies.append(RotatingEnemy([
             random.randint(enemy_normal_img.get_width(), display.get_width() - enemy_normal_img.get_width()), cy]))
 
 mouse.unlock()

@@ -1,4 +1,5 @@
 import math
+import random
 import time
 
 import pygame
@@ -373,7 +374,7 @@ class EnemyProjectiles:
                 for p_box in player.plane.hitbox:
                     if pygame.Rect(
                             (projectile[0] - self.projectile_hitbox[0], projectile[1] - self.projectile_hitbox[1],
-                             self.projectile_hitbox[2], self.projectile_hitbox[3]))\
+                             self.projectile_hitbox[2], self.projectile_hitbox[3])) \
                             .colliderect((player.abs_pos[0] + p_box.x, player.abs_pos[1] + p_box.y, p_box.w, p_box.h)):
                         # TODO: Explosion
                         player.plane.health -= self.dmg
@@ -397,6 +398,29 @@ class Enemy6DirProjectiles(EnemyProjectiles):
             for i in range(0, 360, 60):
                 self.projectiles.append([x, y, angle_to_motion(i, self.projectile_speed),
                                          pygame.transform.rotate(self.image, i)])
+            self.last_shoot = time.time() * 1000
+
+
+class RotatingEnemyProjectiles(EnemyProjectiles):
+    def __init__(self, display):
+        # TODO: fix all image loadings
+        image = pygame.image.load("sprites/enemies/enemy_projectile.png")
+        guns = [
+            [42, 35, -45],
+            [33, 35, -135]
+        ]
+        self.shoot_height = display.get_height()/2
+        super().__init__(guns, image, display)
+        self.max_shoot_count = 5
+        self.cooldown = 30
+        self.shoot_count = 0
+
+    def shoot(self, x, y):
+        if time.time() * 1000 > self.last_shoot + self.cooldown and\
+                y > self.shoot_height and self.shoot_count < self.max_shoot_count:
+            for gun in self.guns:
+                self.projectiles.append([x + gun[0], y + gun[1], angle_to_motion(gun[2]+random.uniform(-7, 7), self.projectile_speed)])
+            self.shoot_count += 1
             self.last_shoot = time.time() * 1000
 
 

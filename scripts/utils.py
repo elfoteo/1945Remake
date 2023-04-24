@@ -105,7 +105,7 @@ def outlined_text(text, font, fore_color=(255, 255, 255), outline_color=(50, 50,
 ############################################################################################
 
 
-def rotate(surface, angle, pivot, offset):
+def pivot_rotate(surface, angle, pivot, offset):
     """Rotate the surface around the pivot point.
 
     Args:

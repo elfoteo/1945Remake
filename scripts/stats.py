@@ -23,6 +23,7 @@ class Stats:
     def save(self):
         if not os.path.exists("User Data"):
             os.mkdir("User Data")
+        self.data["ingame_coins"] = 0
         pickle.dump(self.data, open("User Data/stats", "wb"))
 
     def add_coins(self, amount):

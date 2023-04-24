@@ -57,18 +57,18 @@ def win_screen(level_name="LEVEL 31", difficulty="EASY"):
 
         display.blit(eagle_head,
                      (display.get_width() / 2 - eagle_head.get_width() / 2, 85 + wings_movement * head_movement_mult))
-        display.blit(rotate(eagle_wing_r, wings_movement, pivot_r, pygame.Vector2(0, 0))[0],
+        display.blit(pivot_rotate(eagle_wing_r, wings_movement, pivot_r, pygame.Vector2(0, 0))[0],
                      (display.get_width() / 2 - eagle_head.get_width() - eagle_wing_r.get_width() / 2 - 25,
                       60 + wings_movement * head_movement_mult))
-        display.blit(rotate(eagle_wing_l, -wings_movement, pivot_l, pygame.Vector2(0, 0))[0],
+        display.blit(pivot_rotate(eagle_wing_l, -wings_movement, pivot_l, pygame.Vector2(0, 0))[0],
                      (display.get_width() / 2 + eagle_head.get_width() - eagle_wing_r.get_width() / 2 + 25,
                       60 + wings_movement * head_movement_mult))
 
         display.blit(
-            rotate(eagle_wing_bottom_r, wings_movement * bottom_wings_mult, bottom_pivot_r, pygame.Vector2(0, 0))[0],
+            pivot_rotate(eagle_wing_bottom_r, wings_movement * bottom_wings_mult, bottom_pivot_r, pygame.Vector2(0, 0))[0],
             (display.get_width() / 2 - eagle_head.get_width(), 105 + win_label.get_height()))
         display.blit(
-            rotate(eagle_wing_bottom_l, -(wings_movement * bottom_wings_mult), bottom_pivot_l, pygame.Vector2(0, 0))[0],
+            pivot_rotate(eagle_wing_bottom_l, -(wings_movement * bottom_wings_mult), bottom_pivot_l, pygame.Vector2(0, 0))[0],
             (display.get_width() / 2 + eagle_head.get_width() - eagle_wing_bottom_r.get_width(),
              105 + win_label.get_height()))
 
