@@ -26,7 +26,7 @@ def pause():
         clock.tick(120)
 
 
-def win_screen(level_name="LEVEL 31", difficulty="EASY"):
+def win_screen(level_name="Level 31 - EASY"):
     mouse.unlock()
     head_movement_mult = 2
 
@@ -98,7 +98,7 @@ def win_screen(level_name="LEVEL 31", difficulty="EASY"):
                           120 + win_label.get_height() - win_star.get_height() / 2 + win_star_circle.get_height() / 2 - 12)))
 
         display.blit(level_banner, (display.get_width() / 2 - level_banner.get_width() / 2, 270))
-        surf = normal_font.render(level_name + " - " + difficulty, True, (255, 255, 255))
+        surf = normal_font.render(level_name, True, (255, 255, 255))
         display.blit(surf, (
         display.get_width() / 2 - surf.get_width() / 2, 270 + level_banner.get_height() / 2 - surf.get_height() / 2))
 
@@ -121,10 +121,8 @@ def win_screen(level_name="LEVEL 31", difficulty="EASY"):
         clock.tick(120)
 
 
-def game(enemies):
+def play_level(level):
     mouse.lock()
-    lvl_finished = False
-    lvl_finished_cooldown = 5000
     # TODO: change all to work with delta time
     # win_screen()
     while True:
@@ -134,19 +132,19 @@ def game(enemies):
             if not coin.alive:
                 coins.remove(coin)
 
-        new_enemies = enemies.copy()
-        for enemy in enemies:
+        new_enemies = level.enemies.copy()
+        for enemy in level.enemies:
             enemy.draw()
             if not enemy.alive and enemy.projectiles.projectiles == []:
                 new_enemies.remove(enemy)
                 # TODO: Explosion
-        enemies = new_enemies.copy()
+        level.enemies = new_enemies.copy()
         del new_enemies
-        if enemies == [] and coins == [] and not lvl_finished:
-            lvl_finished = time.time() * 1000
+        if level.enemies == [] and coins == [] and not level.finished:
+            level.finished = time.time() * 1000
 
-        if lvl_finished + lvl_finished_cooldown < time.time() * 1000 and lvl_finished:
-            win_screen()
+        if level.finished + level.finished_cooldown < time.time() * 1000 and level.finished:
+            win_screen(level_name=level.name)
             user_stats.data["coins"] += user_stats.data["ingame_coins"]
             user_stats.data["ingame_coins"] = 0
             return

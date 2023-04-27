@@ -44,6 +44,15 @@ def load_animation_frames(directory, scale=None):
             frames.append(frame)
     return frames
 
+def transparent_rect(size, intensity):
+    """Darkens a given texture by a given intensity"""
+    w, h = size
+    dark_texture = pygame.Surface((w, h), pygame.SRCALPHA)
+    dark_color = (intensity * 255, intensity * 255, intensity * 255, 255)
+    dark_texture.fill(dark_color)
+    # dark_texture.blit(texture, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+    return dark_texture
+
 
 def _quit():
     pygame.quit()
@@ -120,5 +129,28 @@ def pivot_rotate(surface, angle, pivot, offset):
     rect = rotated_image.get_rect(center=pivot+rotated_offset)
     return rotated_image, rect  # Return the rotated image and shifted rect.
 
+
+# End
+
+############################################################################################
+###  Code from:                                                                          ###
+###  https://stackoverflow.com/questions/8906926/formatting-timedelta-objects            ###
+###  (modified)                                                                          ###
+############################################################################################
+
+
+def strfdelta(tdelta, fmt):
+    d = {"days": tdelta.days}
+    d["hours"], rem = divmod(tdelta.seconds, 3600)
+    d["minutes"], d["seconds"] = divmod(rem, 60)
+    if d["minutes"] == 0:
+        d["minutes"] = "00"
+    if len(str(d["minutes"])) == 1:
+        d["minutes"] = "0"+str(d["minutes"])
+    if d["seconds"] == 0:
+        d["seconds"] = "00"
+    if len(str(d["seconds"])) == 1:
+        d["seconds"] = "0"+str(d["seconds"])
+    return fmt.format(**d)
 
 # End

@@ -60,6 +60,7 @@ visual_effects = []
 user_stats = Stats()
 scroll_speed = 1
 coins = []
+
 font = pygame.font.Font("font/font.ttf", 30)
 
 shader_time = 0
@@ -135,6 +136,10 @@ class Mouse:
     def lock(self):
         self.set_grab(True)
         self.set_visible(False)
+    
+    @staticmethod
+    def get_pos():
+        return pygame.mouse.get_pos()
 
     def draw(self):
         self.rel = pygame.mouse.get_rel()
@@ -143,12 +148,12 @@ class Mouse:
 class Player:
     def __init__(self):
         self.coins_pickup_distance = 100
-        self.pos = [150, 250]
-        self.abs_pos = self.pos
         self.window = pygame.Rect((0, 0,
                                    display.get_width(),
                                    display.get_height()))
-        self.plane = planes.P_61_Black_Widow(visual_effects)
+        self.plane = planes.Boeing_P26_Peashooter(visual_effects)
+        self.pos = [display.get_width()/2, display.get_height()-self.plane.image.get_height()*1.5]
+        self.abs_pos = self.pos
         self.average_motion_x = 0
         self.motion_history = []
 
@@ -161,6 +166,15 @@ class Player:
         pygame.draw.rect(display, (120, 120, 120), rect)
         if self.plane.health <= 0:
             self.plane.alive = False
+
+    def collides(self, hitboxes):
+        for hitbox in hitboxes:
+            for plane_hitbox in self.plane.hitbox:
+                real_hitbox = pygame.Rect(self.abs_pos[0]+plane_hitbox.x,
+                self.abs_pos[1]+plane_hitbox.y, plane_hitbox.w, plane_hitbox.h)
+                if hitbox.colliderect(real_hitbox):
+                    return True
+        return False
 
     @staticmethod
     def draw_coins():
@@ -215,6 +229,8 @@ class Coin:
                         self.pos[1] - self.frames[self.index].get_height() / 2)
         self.alive = True
         self.picking_up = False
+        self.pos = [self.pos[0] - self.frames[self.index].get_width() / 2,
+                    self.pos[1] - self.frames[self.index].get_height() / 2]
 
     def draw(self):
         self.abs_pos = (self.pos[0] + self.frames[self.index].get_width() / 2,
@@ -243,7 +259,7 @@ class Coin:
 
 class Enemy:
     def __init__(self, speed, health, enemy_projectiles, image, pos, hitbox, auto_shoot=True,
-                 particles_on_death=True):
+                 particles_on_death=True, auto_move=True):
         self.speed = speed
         self.health = health
         self.max_health = health
@@ -254,6 +270,7 @@ class Enemy:
         self.alive = True
         self.particles_on_death = particles_on_death
         self.auto_shoot = auto_shoot
+        self.auto_move = auto_move
 
     def collide(self, rect) -> bool:
         for hitbox in self.hitbox:
@@ -272,14 +289,15 @@ class Enemy:
                               (self.image.get_width() / 4 * 2) * (self.health / self.max_health), 5))
 
     def on_death(self):
-        coins.append(Coin(1, [self.pos[0], self.pos[1]]))
+        coins.append(Coin(1, [self.pos[0]+self.image.get_width()/2, self.pos[1]+self.image.get_height()/2]))
         if self.particles_on_death:
             visual_effects.append(
                 VFX(death_frames, self.pos[0] + self.image.get_width() / 4, self.pos[1] + self.image.get_height() + 5,
                     delay=10))
 
     def draw(self):
-        self.pos[1] += self.speed
+        if self.auto_move:
+            self.pos[1] += self.speed
         if self.health <= 0 and self.alive:
             self.alive = False
             self.on_death()
@@ -419,7 +437,7 @@ class RotatingEnemy(Enemy):
                     pygame.draw.rect(display, (255, 0, 0), (self.pos[0] + box.x, self.pos[1] + box.y, box.w, box.h))
 
 
-class LaserEnemy(Enemy):  # TODO
+class LaserEnemy(Enemy):
     def __init__(self, pos):
         enemy_projectiles = EnemyProjectiles([], 0, display, 99999)
         self.image_scale = 0.75
@@ -428,21 +446,33 @@ class LaserEnemy(Enemy):  # TODO
         speed = 1
         hitbox = [pygame.Rect((round(14 * self.image_scale), round(13 * self.image_scale),
                                round(86 * self.image_scale), round(85 * self.image_scale)))]
-        super().__init__(speed, health, enemy_projectiles, image, pos, hitbox, auto_shoot=False)
+        super().__init__(speed, health, enemy_projectiles, image, pos, hitbox, auto_shoot=False, auto_move=False)
         self.laser_cooldown = 6000
-        self.laser_duration = 2000
-        self.laser_active = True
+        self.laser_duration = 3000
+        self.last_laser_active = time.time()*1000
+        self.laser_active = False
         self.last_shoot = time.time() * 1000
 
     def draw(self):
         super().draw()
+        self.pos[1] += min(self.speed, (display.get_height()/3-self.pos[1])/20)
         if self.laser_active:
-            rect_l = pygame.Rect(-display.get_width(), self.pos[1] + (52 * self.image_scale),
-                                 -display.get_width() - self.pos[0], 9 * self.image_scale)
+            rect_l = pygame.Rect(0, self.pos[1] + (52 * self.image_scale),
+                                 self.pos[0], 9 * self.image_scale)
             rect_r = pygame.Rect(self.pos[0] + (113 * self.image_scale), self.pos[1] + (52 * self.image_scale),
                                  display.get_width() - self.pos[0], 9 * self.image_scale)
             pygame.draw.rect(display, (255, 0, 0), rect_l)
             pygame.draw.rect(display, (255, 0, 0), rect_r)
+            if player.collides([rect_l, rect_r]):
+                player.plane.health = 0
+        if self.last_laser_active + self.laser_cooldown < time.time()*1000 and not self.laser_active and display.get_rect().colliderect(
+                pygame.Rect(self.hitbox[0].x+self.pos[0], self.hitbox[0].y+self.pos[1],
+                            self.hitbox[0].w, self.hitbox[0].h)):
+            self.last_shoot = time.time()*1000
+            self.laser_active = True
+        if self.laser_active and self.last_shoot+self.laser_duration < time.time()*1000:
+            self.last_laser_active = time.time()*1000
+            self.laser_active = False
 
 
 class EnemyShooter6Dir(Enemy):
@@ -552,6 +582,25 @@ class NuclearBomb(Enemy):
                 self.frame_index = 0
             self.image = nuclear_bomb_frames[self.frame_index]
         super().draw()
+
+
+class Level():
+    def __init__(self, enemies, level_number: int, level_difficulty: int) -> None:
+        if level_difficulty == 1:
+            level_difficulty = "EASY"
+        elif level_difficulty == 2:
+            level_difficulty = "MEDIUM"
+        elif level_difficulty == 3:
+            level_difficulty = "HARD"
+        else:
+            level_difficulty = "UNKNOWN"
+        self.name = "LEVEL "+str(level_number)+" - "+level_difficulty.upper()
+        self.number = level_number
+        self.difficulty = level_difficulty
+        self.enemies = enemies
+        self.finished = False
+        self.finished_cooldown = 5000
+        self.coins = []
 
 
 shader = Shader()

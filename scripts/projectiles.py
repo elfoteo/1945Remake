@@ -68,14 +68,17 @@ class Projectiles:
                                         projectile[0] - projectile[3].get_width() / 2,
                                         projectile[1] - projectile[3].get_height() / 2, delay=10))
                     if not removed:
-                        new_proj.remove(projectile)
+                        try:
+                            new_proj.remove(projectile)
+                        except:
+                            pass
         self.projectiles = new_proj.copy()
         del new_proj
 
 
 class DelanneProjectiles(Projectiles):
-    def __init__(self, guns, center_image, side_image, image, speed=4, cooldown=350, dmg=15, vfx=None, anchor=None):
-        super().__init__(guns, image, speed, cooldown, dmg, vfx, anchor)
+    def __init__(self, guns, center_image, side_image, speed=4, cooldown=350, dmg=15, vfx=None, anchor=None):
+        super().__init__(guns, center_image, speed, cooldown, dmg, vfx, anchor)
         if vfx is None:
             vfx = []
             self.use_vfx = False
@@ -97,6 +100,7 @@ class DelanneProjectiles(Projectiles):
         self.hit_frames = hit_frames
 
     def shoot(self, x, y):
+        
         if time.time() * 1000 > self.last_shoot + self.cooldown:
             gun_index = 0
             for gun in self.guns:
@@ -111,11 +115,12 @@ class DelanneProjectiles(Projectiles):
                 elif gun_index == 0:
                     self.projectiles.append([x + gun[0], y + gun[1], angle_to_motion(gun[2], self.projectile_speed),
                                              pygame.transform.rotate(self.left_image, -gun[2] - 270)])
+                    
                     self.vfx.append(VFX(self.shoot_frames,
                                         gun[0] + x,
                                         gun[1] + y,
                                         anchor=self.anchor,
-                                        offset=gun))
+                                        offset=gun))    
                 elif gun_index == 2:
                     self.projectiles.append([x + gun[0], y + gun[1], angle_to_motion(gun[2], self.projectile_speed),
                                              pygame.transform.rotate(self.right_image, -gun[2] - 270)])
@@ -324,7 +329,10 @@ class BlackWidowProjectiles(Projectiles):
                                             projectile[0] - projectile[3].get_width() / 2,
                                             projectile[1] - projectile[3].get_height() / 2, delay=10))
                         if not removed:
-                            new_proj.remove(projectile)
+                            try:
+                                new_proj.remove(projectile)
+                            except:
+                                pass
         self.projectiles = new_proj.copy()
         del new_proj
 

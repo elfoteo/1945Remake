@@ -50,6 +50,7 @@ class Plane:
         self.image = self.frame_dict[key]
         if motion >= 0:
             self.image = pygame.transform.flip(self.image, True, False)
+        
         self.shoot_projectiles(abs_pos)
         self.projectiles.draw(screen, enemies)
 
@@ -270,7 +271,7 @@ class F_86_Sabre(Plane):
         fire_cooldown = 385
         projectiles_speed = 6
         projectiles_dmg = 3
-        base_dir = "sprites/f-86_sabre/"
+        base_dir = "sprites/planes/f-86_sabre/"
         normal_projectiles = pygame.transform.scale_by(pygame.image.load(base_dir + "projectile.png"),
                                                        projectile_scale)
         super().__init__(guns, projectiles_dmg, health, hitbox, fire_cooldown, projectiles_speed,
