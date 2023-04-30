@@ -13,6 +13,7 @@ import moderngl
 pygame.init()
 pygame.font.init()
 screen = pygame.display.set_mode((440, 854), pygame.OPENGL | pygame.DOUBLEBUF)
+pygame.display.set_caption("1945 Remake")
 display = pygame.Surface(screen.get_size())
 
 clock = pygame.time.Clock()
@@ -55,7 +56,18 @@ pass_lvl_button = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/
 level_rewards_bg = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/rewards_bg.png"), 1)
 
 ui_background = pygame.transform.scale(pygame.image.load("sprites/ui/ui_background.png"), display.get_size())
-pygame.display.set_caption("1945 Remake")
+
+coin_icon = pygame.transform.scale_by(pygame.image.load("sprites/ui/coin.png"), 1)
+gem_icon = pygame.transform.scale_by(pygame.image.load("sprites/ui/gem.png"), 1)
+dogtag_icon = pygame.transform.scale_by(pygame.image.load("sprites/ui/dogtag.png"), 1)
+buy_dogtags = pygame.transform.scale_by(pygame.image.load("sprites/ui/buy_dogtags.png"), 0.9)
+dogtags_pile = pygame.transform.scale_by(pygame.image.load("sprites/ui/dogtags_pile.png"), 1)
+single_dogtag = pygame.transform.scale_by(pygame.image.load("sprites/ui/single_dogtag.png"), 1)
+text_label = pygame.transform.scale_by(pygame.image.load("sprites/ui/text_label.png"), 1.25)
+gem_purchase = pygame.transform.scale_by(pygame.image.load("sprites/ui/gem_purchase.png"), 1.35)
+gui_close = pygame.transform.scale_by(pygame.image.load("sprites/ui/gui_close.png"), 1.1)
+gui_close_hover = pygame.transform.scale_by(pygame.image.load("sprites/ui/gui_close_hover.png"), 1.1)
+
 visual_effects = []
 user_stats = Stats()
 scroll_speed = 1
@@ -132,6 +144,19 @@ class Mouse:
     def unlock(self):
         self.set_grab(False)
         self.set_visible(True)
+
+    @staticmethod
+    def get_button(num):
+        return pygame.mouse.get_pressed()[num]
+
+    def collideswith(self, rect):
+        if type(rect) == pygame.Rect:
+            if rect.collidepoint(self.get_pos()):
+                return True
+        else:
+            if pygame.Rect(rect).collidepoint(self.get_pos()):
+                return True
+        return False
 
     def lock(self):
         self.set_grab(True)

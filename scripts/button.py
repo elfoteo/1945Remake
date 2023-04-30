@@ -44,7 +44,8 @@ class Button:
         if self.is_clicked:
             if self.text is not None:
                 text = self.font.render(self.text, True, (
-                round(self.text_color[0] * 0.7), round(self.text_color[1] * 0.7), round(self.text_color[2] * 0.7)))
+                    round(self.text_color[0] * 0.7), round(self.text_color[1] * 0.7),
+                    round(self.text_color[2] * 0.7)))
                 text_rect = text.get_rect(center=self.rect.center)
                 screen.blit(text, text_rect)
         else:

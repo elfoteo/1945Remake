@@ -22,6 +22,7 @@ class Stats:
             self.data = pickle.load(open("User Data/stats", "rb"))
         self.dogtags_cooldown = 180
         self.dogtags_limit = 100
+        self.dogtags_full = self.data["dogtags"] >= self.dogtags_limit
         print("Stats loaded")
         print(self.data)
 
@@ -32,6 +33,7 @@ class Stats:
         pickle.dump(self.data, open("User Data/stats", "wb"))
 
     def update_dogtags(self):
+        self.dogtags_full = self.data["dogtags"] >= self.dogtags_limit
         if self.data["dogtags"] >= self.dogtags_limit:
             self.data["dogtags_timestamp"] = round(time.time())
         else:
