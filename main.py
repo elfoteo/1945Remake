@@ -3,7 +3,7 @@ import random
 import pygame.font
 
 from scripts.game import *
-from scripts.button import Button
+from scripts.button import *
 from scripts.label import Label
 
 font = pygame.font.Font("font/font.ttf", 16)
@@ -41,18 +41,23 @@ gems_label = Label(user_stats.data["gems"], gem_icon, (coins_label.get_width() +
 level1 = Level(enemies, 1, 1)
 
 dogtags_plus_rect = pygame.Rect(93 * 1.25, 3 * 1.25, 22 * 1.25, 21 * 1.25)
-dogtags_plus = False
+
+is_showing_dogtags = False
 transparent_overlay = transparent_rect(display.get_size(), 0.65)
 dogtags_timer_font = pygame.font.Font("font/font.ttf", 22)
-dogtags_transparent_bg_blitpos = (
+dogtags_bg_pos = (
     display.get_width() / 2 - buy_dogtags.get_width() / 2, display.get_height() / 2 - buy_dogtags.get_height() / 2)
-dogtags_transparent_bg_rect = pygame.Rect(dogtags_transparent_bg_blitpos[0], dogtags_transparent_bg_blitpos[1],
-                                          buy_dogtags.get_width(), buy_dogtags.get_height())
+dogtags_bg_rect = pygame.Rect(dogtags_bg_pos[0], dogtags_bg_pos[1],
+                              buy_dogtags.get_width(), buy_dogtags.get_height())
 gui_title_font = pygame.font.Font("font/font.ttf", 28)
 purchase_30_dogtags = Button(225, 475, gem_purchase.get_width(), gem_purchase.get_height(), gem_purchase, "10  ",
                              font="font/font.ttf", increase_font_size=0.15)
 purchase_100_dogtags = Button(225, 550, gem_purchase.get_width(), gem_purchase.get_height(), gem_purchase, "30  ",
                               font="font/font.ttf", increase_font_size=0.15)
+dogtags_gui_close = TexturedButton(
+    display.get_width() / 2 + buy_dogtags.get_width() / 2 - gui_close.get_width() / 2 - 15,
+    dogtags_bg_pos[1] - 5, gui_close.get_width(), gui_close.get_height(),
+    gui_close, gui_close_hover)
 while True:
     shader_time += 1
     user_stats.update_dogtags()
@@ -66,27 +71,23 @@ while True:
     dogtags_label.update(user_stats.data["dogtags"])
     singleplayer_button.draw(display)
 
-    if dogtags_plus:
+    if is_showing_dogtags:
         display.blit(transparent_overlay, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-        display.blit(buy_dogtags, dogtags_transparent_bg_blitpos)
+        display.blit(buy_dogtags, dogtags_bg_pos)
         display.blit(text_label, (display.get_width() / 2 - text_label.get_width() / 2,
-                                  dogtags_transparent_bg_blitpos[1] - 5))
+                                  dogtags_bg_pos[1] - 5))
         surf = gui_title_font.render("CHARGE DOGTAG", False, (255, 255, 255))
         display.blit(surf, (display.get_width() / 2 - surf.get_width() / 2, 430 - buy_dogtags.get_height() / 2))
 
         if mouse.collideswith(
                 [display.get_width() / 2 + buy_dogtags.get_width() / 2 - gui_close.get_width() / 2 - 15 + 8,
-                 dogtags_transparent_bg_blitpos[1] - 5 + 8,
+                 dogtags_bg_pos[1] - 5 + 8,
                  gui_close.get_width() - 16, gui_close.get_height() - 16]):
-            display.blit(gui_close_hover,
-                         (display.get_width() / 2 + buy_dogtags.get_width() / 2 - gui_close.get_width() / 2 - 15,
-                          dogtags_transparent_bg_blitpos[1] - 5))
-            if mouse.get_button(0):
-                dogtags_plus = False
+            dogtags_gui_close.draw(display)
         else:
             display.blit(gui_close,
                          (display.get_width() / 2 + buy_dogtags.get_width() / 2 - gui_close.get_width() / 2 - 15,
-                          dogtags_transparent_bg_blitpos[1] - 5))
+                          dogtags_bg_pos[1] - 5))
 
         display.blit(dogtags_pile, (display.get_width() / 2 - dogtags_pile.get_width() / 2, 200))
         if user_stats.dogtags_full:
@@ -124,27 +125,30 @@ while True:
         if event.type == pygame.QUIT:
             quit_game()
 
-        if not dogtags_plus and singleplayer_button.handle_event(event) and \
+        if not is_showing_dogtags and singleplayer_button.handle_event(event) and \
                 user_stats.can_purchase("dogtags", 5):
             user_stats.data["dogtags"] -= 5
             play_level(level1)
 
-        if dogtags_plus and purchase_100_dogtags.handle_event(event) and \
+        if is_showing_dogtags and purchase_100_dogtags.handle_event(event) and \
                 user_stats.can_purchase("gems", 30):
             user_stats.data["gems"] -= 30
             user_stats.data["dogtags"] += 100
 
-        if dogtags_plus and purchase_30_dogtags.handle_event(event) and \
+        if is_showing_dogtags and purchase_30_dogtags.handle_event(event) and \
                 user_stats.can_purchase("gems", 10):
             user_stats.data["gems"] -= 10
             user_stats.data["dogtags"] += 30
 
+        if is_showing_dogtags and dogtags_gui_close.handle_event(event):
+            is_showing_dogtags = False
+
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
-                if dogtags_plus and not dogtags_transparent_bg_rect.collidepoint(mouse.get_pos()):
-                    dogtags_plus = False
+                if is_showing_dogtags and not dogtags_bg_rect.collidepoint(mouse.get_pos()):
+                    is_showing_dogtags = False
                 if dogtags_plus_rect.collidepoint(mouse.get_pos()):
-                    dogtags_plus = True
+                    is_showing_dogtags = True
 
     mouse.draw()
     shader.draw(program_args={"tex": 0})  # , "time": shader_time

@@ -33,7 +33,8 @@ def angle_between_points(pos1, pos2):
 
 def load_animation_frames(directory, scale=None):
     frames = []
-    filenames = sorted(os.listdir(directory), key=lambda x: int(os.path.splitext(x)[0]) if x[0].isdigit() else float('inf'))
+    filenames = sorted(os.listdir(directory),
+                       key=lambda x: int(os.path.splitext(x)[0]) if x[0].isdigit() else float('inf'))
     for filename in filenames:
         filepath = os.path.join(directory, filename)
         if filename.split(".")[0].isdigit():
@@ -43,6 +44,7 @@ def load_animation_frames(directory, scale=None):
                 frame = pygame.transform.scale_by(frame, scale)
             frames.append(frame)
     return frames
+
 
 def transparent_rect(size, intensity):
     """Darkens a given texture by a given intensity"""
@@ -105,6 +107,7 @@ def outlined_text(text, font, fore_color=(255, 255, 255), outline_color=(50, 50,
     surf.blit(text_surf, (outline_width, outline_width))
     return surf
 
+
 # End
 
 ############################################################################################
@@ -126,7 +129,7 @@ def pivot_rotate(surface, angle, pivot, offset):
     rotated_image = pygame.transform.rotozoom(surface, -angle, 1)  # Rotate the image.
     rotated_offset = offset.rotate(angle)  # Rotate the offset vector.
     # Add the offset vector to the center/pivot point to shift the rect.
-    rect = rotated_image.get_rect(center=pivot+rotated_offset)
+    rect = rotated_image.get_rect(center=pivot + rotated_offset)
     return rotated_image, rect  # Return the rotated image and shifted rect.
 
 
@@ -146,11 +149,11 @@ def strfdelta(tdelta, fmt):
     if d["minutes"] == 0:
         d["minutes"] = "00"
     if len(str(d["minutes"])) == 1:
-        d["minutes"] = "0"+str(d["minutes"])
+        d["minutes"] = "0" + str(d["minutes"])
     if d["seconds"] == 0:
         d["seconds"] = "00"
     if len(str(d["seconds"])) == 1:
-        d["seconds"] = "0"+str(d["seconds"])
+        d["seconds"] = "0" + str(d["seconds"])
     return fmt.format(**d)
 
 # End

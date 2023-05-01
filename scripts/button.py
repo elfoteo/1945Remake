@@ -70,3 +70,9 @@ class Button:
                     return True
                 self.is_clicked = False
         return False
+
+
+class TexturedButton(Button):
+    def __init__(self, x, y, width, height, texture, texture_down):
+        super().__init__(x, y, width, height, texture, None, (255, 255, 255), None, 0)
+        self.texture_down = texture_down
