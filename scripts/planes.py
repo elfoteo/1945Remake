@@ -34,7 +34,7 @@ class Plane:
     def get_y(self):
         return self.abs_pos[1]
 
-    def update(self, motion, screen, enemies, abs_pos):
+    def update(self, motion, screen, enemies, abs_pos, is_dummy=False):
         self.abs_pos = abs_pos
         tmp_motion = abs(motion)
         if tmp_motion >= 3.2:
@@ -51,7 +51,8 @@ class Plane:
         if motion >= 0:
             self.image = pygame.transform.flip(self.image, True, False)
         
-        self.shoot_projectiles(abs_pos)
+        if not is_dummy:
+            self.shoot_projectiles(abs_pos)
         self.projectiles.draw(screen, enemies)
 
     def shoot_projectiles(self, abs_pos):
@@ -237,8 +238,8 @@ class P_61_Black_Widow(Plane):
         }
         self.image = self.frame_dict["t5"]
 
-    def update(self, motion, screen, enemies, abs_pos):
-        super().update(motion, screen, enemies, abs_pos)
+    def update(self, motion, screen, enemies, abs_pos, is_dummy=False):
+        super().update(motion, screen, enemies, abs_pos, is_dummy)
         self.special_projectiles.draw(screen, enemies, abs_pos)
 
     def shoot_projectiles(self, abs_pos):
@@ -293,8 +294,8 @@ class F_86_Sabre(Plane):
             [128*image_scale, 96*image_scale]
         ]
 
-    def update(self, motion, screen, enemies, abs_pos):
-        super().update(motion, screen, enemies, abs_pos)
+    def update(self, motion, screen, enemies, abs_pos, is_dummy=False):
+        super().update(motion, screen, enemies, abs_pos, is_dummy)
         self.wait_time += 1
         if self.wait_time >= self.max_wait_time:
             for engine in self.engines:

@@ -15,27 +15,27 @@ pygame.font.init()
 screen = pygame.display.set_mode((440, 854), pygame.OPENGL | pygame.DOUBLEBUF)
 pygame.display.set_caption("1945 Remake")
 display = pygame.Surface(screen.get_size())
-
+pygame.display.flip()
 clock = pygame.time.Clock()
 DEBUG = False
 if DEBUG:
     print("!!! THIS GAME IS RUNNING IN DEBUG MODE !!!")
-enemy_shooter_6dir_img = pygame.image.load("sprites/enemies/enemy_shooter_6dir.png")
-enemy_laser_img = pygame.image.load("sprites/enemies/enemy_laser.png")
 # TODO: better healthbar
-healthbar_img = pygame.transform.scale(pygame.image.load("sprites/ui/healthbar.png"), (290 / 2 * 1.2, 56 / 2 * 1.2))
+healthbar_img = pygame.transform.scale(pygame.image.load("sprites/ui/ingame/healthbar.png"), (290 / 2 * 1.2, 56 / 2 * 1.2))
 enemy_normal_img = pygame.transform.scale(pygame.image.load("sprites/enemies/enemy_normal.png"),
                                           (110 / 4 * 2.5, 90 / 4 * 2.5))
 enemy_projectile_img = pygame.image.load("sprites/bombs/bullet_bomb/projectile.png")
 enemy_normal2_frames = load_animation_frames("sprites/enemies/enemy_normal2")
 rotating_enemy_frames = load_animation_frames("sprites/enemies/rotating_enemy")
+enemy_shooter_6dir_img = pygame.image.load("sprites/enemies/enemy_shooter_6dir.png")
+enemy_laser_img = pygame.image.load("sprites/enemies/enemy_laser.png")
 following_enemy_img = pygame.image.load("sprites/enemies/following_enemy.png")
 bullet_bomb_frames = load_animation_frames("sprites/bombs/bullet_bomb")
 nuclear_bomb_frames = load_animation_frames("sprites/bombs/nuclear_bomb")
 death_frames = load_animation_frames("sprites/vfx/explosion")
 coin1_frames = load_animation_frames("sprites/coins/1")
 coin5_frames = load_animation_frames("sprites/coins/5")
-ingame_coins_img = pygame.transform.scale_by(pygame.image.load("sprites/ui/ingame_coin.png"), 0.8)
+ingame_coins_img = pygame.transform.scale_by(pygame.image.load("sprites/ui/ingame/ingame_coin.png"), 0.8)
 win_tail_r = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/tail.png"), 1)
 win_front_r = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/front.png"), 1)
 win_shadow_r = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/shadow.png"), 1)
@@ -68,18 +68,19 @@ gem_purchase = pygame.transform.scale_by(pygame.image.load("sprites/ui/gem_purch
 gui_close = pygame.transform.scale_by(pygame.image.load("sprites/ui/gui_close.png"), 1.1)
 gui_close_hover = pygame.transform.scale_by(pygame.image.load("sprites/ui/gui_close_hover.png"), 1.1)
 
+gui_parking_area = pygame.transform.scale_by(pygame.image.load("sprites/ui/parking_area.png"), 1.1)
+arrow_back = pygame.transform.scale_by(pygame.image.load("sprites/ui/arrow_back.png"), 1.2)
+planes_gui_planes_station = pygame.transform.scale_by(pygame.image.load("sprites/ui/planes/plane_station.png"), 1.2)
+planes_gui_arrow_back_frame = pygame.transform.scale_by(pygame.image.load("sprites/ui/planes/arrow_back_frame.png"), 1.2)
 visual_effects = []
 user_stats = Stats()
 scroll_speed = 1
 coins = []
 
 font = pygame.font.Font("font/font.ttf", 30)
-
-shader_time = 0
-
+big_font = pygame.font.Font("font/font.ttf", 58)
 
 # TODO: Fix image imports
-# TODO: screen sake effect
 
 
 def quit_game():
@@ -105,6 +106,8 @@ class Shader:
         print("Shaders loaded")
         self.program = self.ctx.program(vertex_shader=self.vert_shader, fragment_shader=self.frag_shader)
         self.render_object = self.ctx.vertex_array(self.program, [(self.quad_buffer, '2f 2f', 'vert', 'texcoord')])
+        self.shake_ammount = 0
+        self.red_overlay = 0
 
     def get_ctx(self):
         return self.ctx
@@ -116,12 +119,25 @@ class Shader:
         tex.write(surf.get_view('1'))
         return tex
 
-    def draw(self, program_args: dict):
+    def draw(self, program_args: dict={}):
+        pygame.draw.rect(display, (0, 0, 0), (-20, -20, display.get_width()+40, display.get_height()+40), 20)
         frame_tex = self.surf_to_texture(display)
         frame_tex.use(0)
+        self.program["tex"] = 0
+        self.program["shake_x"] = random.uniform(-self.shake_ammount, self.shake_ammount)
+        self.program["shake_y"] = random.uniform(-self.shake_ammount, self.shake_ammount)
+        self.program["red_overlay"] = self.red_overlay
         for arg in program_args:
             self.program[arg] = program_args[arg]
-
+        # self.program["time"] = time.time()*1000
+        self.shake_ammount = round(self.shake_ammount/1.04, 2)
+        self.red_overlay = round(self.red_overlay/1.03, 2)
+        self.red_overlay -= 0.002
+        if self.shake_ammount <= 0.5:
+            self.shake_ammount = 0
+        if self.red_overlay <= 0.1:
+            self.red_overlay = 0
+        
         self.render_object.render(mode=moderngl.TRIANGLE_STRIP)
         pygame.display.flip()
         frame_tex.release()
@@ -176,11 +192,15 @@ class Player:
         self.window = pygame.Rect((0, 0,
                                    display.get_width(),
                                    display.get_height()))
-        self.plane = planes.Boeing_P26_Peashooter(visual_effects)
-        self.pos = [display.get_width()/2, display.get_height()-self.plane.image.get_height()*1.5]
+        self.plane = user_stats.get_plane()(visual_effects)
+        self.default_spawn_pos = [display.get_width()/2, display.get_height()-self.plane.image.get_height()*4]
+        self.pos = self.default_spawn_pos
         self.abs_pos = self.pos
         self.average_motion_x = 0
         self.motion_history = []
+        self.auto_controlled = False
+        self.auto_rel = [0, 0]
+        self.is_dummy = False
 
     def draw_healthbar(self):
         display.blit(healthbar_img, (10, 10))
@@ -196,7 +216,9 @@ class Player:
         for hitbox in hitboxes:
             for plane_hitbox in self.plane.hitbox:
                 real_hitbox = pygame.Rect(self.abs_pos[0]+plane_hitbox.x,
-                self.abs_pos[1]+plane_hitbox.y, plane_hitbox.w, plane_hitbox.h)
+                                          self.abs_pos[1]+plane_hitbox.y,
+                                          plane_hitbox.w,
+                                          plane_hitbox.h)
                 if hitbox.colliderect(real_hitbox):
                     return True
         return False
@@ -207,9 +229,17 @@ class Player:
         text = outlined_text(str(user_stats.data["ingame_coins"]), font)
         display.blit(text, (display.get_width() - 50 - text.get_width(), 150))
 
-    def draw(self):
-        mx, my = mouse.rel
+    def deal_damage(self, ammount):
+        self.plane.health -= ammount
+        shader.red_overlay = 1
+        shader.shake_ammount += 1.5
 
+    def draw(self):
+        if not self.auto_controlled:
+            mx, my = mouse.rel
+        else:
+            mx, my = self.auto_rel
+        
         if pygame.mouse.get_pressed()[0]:
             self.motion_history.append([mx, time.time()])
         else:
@@ -223,10 +253,10 @@ class Player:
 
         if pygame.mouse.get_pressed()[0] and self.window.collidepoint((self.pos[0] + mx, self.pos[1])):
             self.pos[0] += mx
-        if pygame.mouse.get_pressed()[0] and self.window.collidepoint((self.pos[0], self.pos[1] + my)):
+        if (pygame.mouse.get_pressed()[0] and self.window.collidepoint((self.pos[0], self.pos[1] + my))) or self.auto_controlled:
             self.pos[1] += my
         self.abs_pos = (self.pos[0] - self.plane.image.get_width() / 2, self.pos[1] - self.plane.image.get_height() / 2)
-        self.plane.update(self.average_motion_x, display, enemies, self.abs_pos)
+        self.plane.update(self.average_motion_x, display, enemies, self.abs_pos, is_dummy=self.is_dummy)
 
         display.blit(self.plane.image,
                      (self.pos[0] - self.plane.image.get_width() / 2, self.pos[1] - self.plane.image.get_height() / 2))
@@ -338,7 +368,7 @@ class Enemy:
             for p_box in player.plane.hitbox:
                 if self.collide((player.abs_pos[0] + p_box.x, player.abs_pos[1] + p_box.y, p_box.w, p_box.h)):
                     # TODO: Explosion
-                    player.plane.health -= self.health
+                    player.deal_damage(self.health)
                     self.health = 0
             if DEBUG:
                 for box in self.hitbox:
@@ -455,7 +485,7 @@ class RotatingEnemy(Enemy):
             for p_box in player.plane.hitbox:
                 if self.collide((player.abs_pos[0] + p_box.x, player.abs_pos[1] + p_box.y, p_box.w, p_box.h)):
                     # TODO: Explosion
-                    player.plane.health -= self.health
+                    player.deal_damage(self.health)
                     self.health = 0
             if DEBUG:
                 for box in self.hitbox:
@@ -489,7 +519,7 @@ class LaserEnemy(Enemy):
             pygame.draw.rect(display, (255, 0, 0), rect_l)
             pygame.draw.rect(display, (255, 0, 0), rect_r)
             if player.collides([rect_l, rect_r]):
-                player.plane.health = 0
+                player.deal_damage(player.plane.health+1)
         if self.last_laser_active + self.laser_cooldown < time.time()*1000 and not self.laser_active and display.get_rect().colliderect(
                 pygame.Rect(self.hitbox[0].x+self.pos[0], self.hitbox[0].y+self.pos[1],
                             self.hitbox[0].w, self.hitbox[0].h)):
@@ -529,7 +559,7 @@ class EnemyShooter6Dir(Enemy):
             for p_box in player.plane.hitbox:
                 if self.collide((player.abs_pos[0] + p_box.x, player.abs_pos[1] + p_box.y, p_box.w, p_box.h)):
                     # TODO: Explosion
-                    player.plane.health -= self.health
+                    player.deal_damage(self.health)
                     self.health = 0
             if DEBUG:
                 for box in self.hitbox:
@@ -553,6 +583,7 @@ class BulletBomb(Enemy):
 
     def on_death(self):
         self.projectiles.shoot(self.pos[0], self.pos[1])
+        shader.shake_ammount += 1.6
         super().on_death()
 
     def draw(self):
@@ -582,13 +613,13 @@ class NuclearBomb(Enemy):
                          particles_on_death=False)
 
     def on_death(self):
-
+        shader.shake_ammount += 2.4
         for enemy in enemies:
             if distance_between_points(enemy.pos, self.pos) <= 350:
                 enemy.health -= distance_between_points(enemy.pos, self.pos) * -1 + 400
 
         if distance_between_points(player.pos, self.pos) <= 350:
-            player.plane.health -= distance_between_points(player.pos, self.pos) * -1 + 385
+            player.deal_damage(distance_between_points(player.pos, self.pos) * -1 + 385)
 
         anim = []
         for i in death_frames:
@@ -625,6 +656,7 @@ class Level():
         self.enemies = enemies
         self.finished = False
         self.finished_cooldown = 5000
+        self.finished_timestamp = -1
         self.coins = []
 
 

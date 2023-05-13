@@ -233,7 +233,7 @@ class TrailProjectiles(Projectiles):
                                 if self.use_vfx:
                                     self.vfx.append(VFX(self.hit_frames,
                                                         projectile[0],
-                                                        projectile[1] + offset_y, delay=100))
+                                                        projectile[1] + offset_y, delay=10))
                                 try:
                                     projectile[4].remove(trail)
                                 except:
@@ -255,7 +255,7 @@ class TrailProjectiles(Projectiles):
                         enemy.health -= self.dmg
                         self.vfx.append(VFX(self.hit_frames,
                                             projectile[0],
-                                            projectile[1], delay=100))
+                                            projectile[1], delay=10))
                         projectile[5] = True
             if not projectile[4] and projectile[5]:
                 new_proj.remove(projectile)
@@ -385,7 +385,7 @@ class EnemyProjectiles:
                              self.projectile_hitbox[2], self.projectile_hitbox[3])) \
                             .colliderect((player.abs_pos[0] + p_box.x, player.abs_pos[1] + p_box.y, p_box.w, p_box.h)):
                         # TODO: Explosion
-                        player.plane.health -= self.dmg
+                        player.deal_damage(self.dmg)
                         try:
                             new_proj.remove(projectile)
                         except:

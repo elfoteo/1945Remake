@@ -61,10 +61,10 @@ class Button:
             else:
                 self.is_hovered = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if self.rect.collidepoint(event.pos):
+            if self.rect.collidepoint(event.pos) and event.button == 1:
                 self.is_clicked = True
         elif event.type == pygame.MOUSEBUTTONUP:
-            if self.is_clicked:
+            if self.is_clicked and event.button == 1:
                 if self.rect.collidepoint(event.pos):
                     self.is_clicked = False
                     return True

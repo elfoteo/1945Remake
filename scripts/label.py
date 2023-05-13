@@ -15,6 +15,10 @@ class Label:
     @staticmethod
     def get_width():
         return label_img.get_width()
+    
+    @staticmethod
+    def get_height():
+        return label_img.get_height()
 
     def draw(self, screen: pygame.Surface):
         screen.blit(label_img, self.pos)

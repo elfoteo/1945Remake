@@ -11,18 +11,49 @@ def pause():
     paused = True
     scr_copy = display.copy().convert_alpha()
     scr_copy.fill((255, 255, 255, 180), None, pygame.BLEND_RGBA_MULT)
+    scr_copy_original = display.copy()
+    resume_button = Button(display.get_width() / 2 - (148 * 1.25) / 2, display.get_height()/2-35, 148 * 1.25, 40 * 1.25,
+                             'sprites/ui/green_button.png',
+                             text="Resume",
+                             font="font/font.ttf", increase_font_size=0.1)
+    exit_button = Button(display.get_width() / 2 - (148 * 1.25) / 2, display.get_height()/2+35, 148 * 1.25, 40 * 1.25,
+                             'sprites/ui/yellow_button.png',
+                             text="Exit",
+                             font="font/font.ttf", increase_font_size=0.1)
     mouse.unlock()
+    unpause_timer = 3
+    last_time = time.time()
+    clicked_resume = False
     while paused:
         display.fill((0, 0, 0))
-        display.blit(scr_copy, (0, 0))
+        if clicked_resume:
+            display.blit(scr_copy_original, (0, 0))
+        else:
+            display.blit(scr_copy, (0, 0))
+            resume_button.draw(display)
+            exit_button.draw(display)
+
+        if clicked_resume:
+            surf = big_font.render(str(unpause_timer), True, (255, 255, 255))
+            display.blit(surf, (display.get_width()/2-surf.get_width()/2, display.get_height()/2-surf.get_height()/2))
+            if last_time + 1 < time.time():
+                unpause_timer -= 1
+                last_time = time.time()
+            if unpause_timer <= 0:
+                paused = False
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit_game()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    paused = False
+            if not clicked_resume:
+                if resume_button.handle_event(event):
                     mouse.lock()
-        shader.draw(program_args={"tex": 0})
+                    clicked_resume = True
+                    last_time = time.time()
+                elif exit_button.handle_event(event):
+                    mouse.unlock()
+                    # TODO: defeat screen
+        shader.draw()
         clock.tick(120)
 
 
@@ -117,7 +148,7 @@ def win_screen(level_name="Level 31 - EASY"):
             if pass_lvl.handle_event(event):
                 return
         mouse.draw()
-        shader.draw(program_args={"tex": 0})
+        shader.draw()
         clock.tick(120)
 
 
@@ -125,6 +156,11 @@ def play_level(level):
     mouse.lock()
     # TODO: change all to work with delta time
     # win_screen()
+    end_anim_trigger = False
+    end_anim = time.time()
+    end_anim_cooldown = 2
+    started_animation = False
+    end_animation_y_counter = 0
     while True:
         display.fill((32, 56, 212))
         for coin in coins:
@@ -140,10 +176,31 @@ def play_level(level):
                 # TODO: Explosion
         level.enemies = new_enemies.copy()
         del new_enemies
-        if level.enemies == [] and coins == [] and not level.finished:
-            level.finished = time.time() * 1000
+        if level.enemies == [] and coins == [] and not level.finished and not end_anim_trigger:
+            end_anim_trigger = True
+            end_anim = time.time()
 
-        if level.finished + level.finished_cooldown < time.time() * 1000 and level.finished:
+        if end_anim_trigger and end_anim + end_anim_cooldown < time.time() and not started_animation:
+            level.finished = True
+            level.finished_timestamp = time.time() * 1000
+            started_animation = True
+            player.auto_controlled = True
+            player.auto_rel = [0, 0]
+
+        if level.finished:
+            player.auto_controlled = True
+            y_movment = ((level.finished_timestamp + level.finished_cooldown-time.time() * 1000)/1000-4)
+            if y_movment <= 0:
+                y_movment *= 4+end_animation_y_counter*0.13
+                end_animation_y_counter += 1
+            player.auto_rel = [
+                0,
+                y_movment
+            ]
+            player.is_dummy = True
+
+        if player.abs_pos[1] <= -5500 and level.finished: # TODO: better wait time before win, 2s timer
+            player.auto_controlled = False
             win_screen(level_name=level.name)
             user_stats.data["coins"] += user_stats.data["ingame_coins"]
             user_stats.data["ingame_coins"] = 0
@@ -163,5 +220,6 @@ def play_level(level):
                     pause()
 
         mouse.draw()
-        shader.draw(program_args={"tex": 0})
+        shader.draw()
         clock.tick(120)
+        

@@ -47,13 +47,12 @@ def load_animation_frames(directory, scale=None):
 
 
 def transparent_rect(size, intensity):
-    """Darkens a given texture by a given intensity"""
+    """Returns a transparent texture with custom size and intensity"""
     w, h = size
-    dark_texture = pygame.Surface((w, h), pygame.SRCALPHA)
-    dark_color = (intensity * 255, intensity * 255, intensity * 255, 255)
-    dark_texture.fill(dark_color)
-    # dark_texture.blit(texture, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-    return dark_texture
+    transparent_texture = pygame.Surface((w, h), pygame.SRCALPHA)
+    transparent_color = (intensity * 255, intensity * 255, intensity * 255, 255)
+    transparent_texture.fill(transparent_color)
+    return transparent_texture
 
 
 def _quit():

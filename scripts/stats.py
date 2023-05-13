@@ -3,6 +3,7 @@ import pickle
 import time
 from datetime import datetime, timedelta
 from scripts.utils import strfdelta
+from scripts.planes import *
 
 class Stats:
     def __init__(self):
@@ -12,10 +13,11 @@ class Stats:
         if not os.path.exists("User Data/stats"):
             self.data = {
                 "coins": 0,
-                "gems": 0,
+                "gems": 100,
                 "ingame_coins": 0,
                 "dogtags": 100,
-                "dogtags_timestamp": round(time.time())
+                "dogtags_timestamp": round(time.time()),
+                "selected_plane": F_86_Sabre
             }
             pickle.dump(self.data, open("User Data/stats", "wb"))
         else:
@@ -31,6 +33,9 @@ class Stats:
             os.mkdir("User Data")
         self.data["ingame_coins"] = 0
         pickle.dump(self.data, open("User Data/stats", "wb"))
+        
+    def get_plane(self):
+        return self.data["selected_plane"]
 
     def update_dogtags(self):
         self.dogtags_full = self.data["dogtags"] >= self.dogtags_limit
