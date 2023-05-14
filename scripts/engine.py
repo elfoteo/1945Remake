@@ -7,71 +7,86 @@ from scripts.stats import Stats
 from scripts.utils import *
 from scripts.utils import _quit
 from scripts.vfx import VFX
+from scripts.shader import Shader, ShaderDisplay
 from array import array
 import moderngl
 
+# init pygame and custom modules
 pygame.init()
 pygame.font.init()
 screen = pygame.display.set_mode((440, 854), pygame.OPENGL | pygame.DOUBLEBUF)
 pygame.display.set_caption("1945 Remake")
-display = pygame.Surface(screen.get_size())
-pygame.display.flip()
+display = ShaderDisplay(screen.get_size())
+shader = Shader()
+
+loading_logo_img = load_image("sprites/ui/loading.png", 0.6)
+display.blit(loading_logo_img, (display.get_width()/2-loading_logo_img.get_width()/2,
+                                display.get_height()/2-loading_logo_img.get_height()/2))
+shader.draw(display)
+time.sleep(10)
 clock = pygame.time.Clock()
 DEBUG = False
 if DEBUG:
     print("!!! THIS GAME IS RUNNING IN DEBUG MODE !!!")
 # TODO: better healthbar
-healthbar_img = pygame.transform.scale(pygame.image.load("sprites/ui/ingame/healthbar.png"), (290 / 2 * 1.2, 56 / 2 * 1.2))
-enemy_normal_img = pygame.transform.scale(pygame.image.load("sprites/enemies/enemy_normal.png"),
-                                          (110 / 4 * 2.5, 90 / 4 * 2.5))
-enemy_projectile_img = pygame.image.load("sprites/bombs/bullet_bomb/projectile.png")
+planes.init()  # initialize the plane module adding all planes to the "all_planes" list
+# load all images
+healthbar_img = load_image("sprites/ui/ingame/healthbar.png", (290 / 2 * 1.2, 56 / 2 * 1.2), no_scale_by=True)
+enemy_normal_img = load_image("sprites/enemies/enemy_normal.png", (110 / 4 * 2.5, 90 / 4 * 2.5), no_scale_by=True)
+enemy_projectile_img = load_image("sprites/bombs/bullet_bomb/projectile.png")
 enemy_normal2_frames = load_animation_frames("sprites/enemies/enemy_normal2")
 rotating_enemy_frames = load_animation_frames("sprites/enemies/rotating_enemy")
-enemy_shooter_6dir_img = pygame.image.load("sprites/enemies/enemy_shooter_6dir.png")
-enemy_laser_img = pygame.image.load("sprites/enemies/enemy_laser.png")
-following_enemy_img = pygame.image.load("sprites/enemies/following_enemy.png")
+enemy_shooter_6dir_img = load_image("sprites/enemies/enemy_shooter_6dir.png")
+enemy_laser_img = load_image("sprites/enemies/enemy_laser.png")
+following_enemy_img = load_image("sprites/enemies/following_enemy.png")
 bullet_bomb_frames = load_animation_frames("sprites/bombs/bullet_bomb")
 nuclear_bomb_frames = load_animation_frames("sprites/bombs/nuclear_bomb")
 death_frames = load_animation_frames("sprites/vfx/explosion")
 coin1_frames = load_animation_frames("sprites/coins/1")
 coin5_frames = load_animation_frames("sprites/coins/5")
-ingame_coins_img = pygame.transform.scale_by(pygame.image.load("sprites/ui/ingame/ingame_coin.png"), 0.8)
-win_tail_r = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/tail.png"), 1)
-win_front_r = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/front.png"), 1)
-win_shadow_r = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/shadow.png"), 1)
+ingame_coins_img = load_image("sprites/ui/ingame/ingame_coin.png", 0.8)
+win_tail_r = load_image("sprites/ui/level/tail.png", 1)
+win_front_r = load_image("sprites/ui/level/front.png", 1)
+win_shadow_r = load_image("sprites/ui/level/shadow.png", 1)
 win_tail_l = pygame.transform.flip(win_tail_r, True, False)
 win_shadow_l = pygame.transform.flip(win_shadow_r, True, False)
 win_front_l = pygame.transform.flip(win_front_r, True, False)
-win_label = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/victory_label.png"), 1.2)
+win_label = load_image("sprites/ui/level/victory_label.png", 1.2)
 
-eagle_head = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/eagle_head.png"), 1.2)
-eagle_wing_r = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/eagle_wing.png"), 1.2)
-eagle_wing_bottom_r = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/eagle_wing_bottom.png"), 1.2)
+eagle_head = load_image("sprites/ui/level/eagle_head.png", 1.2)
+eagle_wing_r = load_image("sprites/ui/level/eagle_wing.png", 1.2)
+eagle_wing_bottom_r = load_image("sprites/ui/level/eagle_wing_bottom.png", 1.2)
 eagle_wing_l = pygame.transform.flip(eagle_wing_r, True, False)
 eagle_wing_bottom_l = pygame.transform.flip(eagle_wing_bottom_r, True, False)
-win_star_circle = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/star_circle.png"), 1.2)
-win_star = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/star.png"), 1.2)
-level_banner = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/level_banner.png"), 1.2)
-pass_lvl_button = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/pass_lvl_button.png"), 1)
-level_rewards_bg = pygame.transform.scale_by(pygame.image.load("sprites/ui/level/rewards_bg.png"), 1)
+win_star_circle = load_image("sprites/ui/level/star_circle.png", 1.2)
+win_star = load_image("sprites/ui/level/star.png", 1.2)
+level_banner = load_image("sprites/ui/level/level_banner.png", 1.2)
+pass_lvl_button = load_image("sprites/ui/level/pass_lvl_button.png", 1)
+level_rewards_bg = load_image("sprites/ui/level/rewards_bg.png", 1)
 
-ui_background = pygame.transform.scale(pygame.image.load("sprites/ui/ui_background.png"), display.get_size())
+ui_background = load_image("sprites/ui/ui_background.png", display.get_size(), no_scale_by=True, alpha=False)
 
-coin_icon = pygame.transform.scale_by(pygame.image.load("sprites/ui/coin.png"), 1)
-gem_icon = pygame.transform.scale_by(pygame.image.load("sprites/ui/gem.png"), 1)
-dogtag_icon = pygame.transform.scale_by(pygame.image.load("sprites/ui/dogtag.png"), 1)
-buy_dogtags = pygame.transform.scale_by(pygame.image.load("sprites/ui/buy_dogtags.png"), 0.9)
-dogtags_pile = pygame.transform.scale_by(pygame.image.load("sprites/ui/dogtags_pile.png"), 1)
-single_dogtag = pygame.transform.scale_by(pygame.image.load("sprites/ui/single_dogtag.png"), 1)
-text_label = pygame.transform.scale_by(pygame.image.load("sprites/ui/text_label.png"), 1.25)
-gem_purchase = pygame.transform.scale_by(pygame.image.load("sprites/ui/gem_purchase.png"), 1.35)
-gui_close = pygame.transform.scale_by(pygame.image.load("sprites/ui/gui_close.png"), 1.1)
-gui_close_hover = pygame.transform.scale_by(pygame.image.load("sprites/ui/gui_close_hover.png"), 1.1)
+coin_icon = load_image("sprites/ui/coin.png", 1)
+gem_icon = load_image("sprites/ui/gem.png", 1)
+dogtag_icon = load_image("sprites/ui/dogtag.png", 1)
+buy_dogtags = load_image("sprites/ui/buy_dogtags.png", 0.9)
+dogtags_pile = load_image("sprites/ui/dogtags_pile.png", 1)
+single_dogtag = load_image("sprites/ui/single_dogtag.png", 1)
+text_label = load_image("sprites/ui/text_label.png", 1.25)
+gem_purchase = load_image("sprites/ui/gem_purchase.png", 1.35)
+gui_close = load_image("sprites/ui/gui_close.png", 1.1)
+gui_close_hover = load_image("sprites/ui/gui_close_hover.png", 1.1)
 
-gui_parking_area = pygame.transform.scale_by(pygame.image.load("sprites/ui/parking_area.png"), 1.1)
-arrow_back = pygame.transform.scale_by(pygame.image.load("sprites/ui/arrow_back.png"), 1.2)
-planes_gui_planes_station = pygame.transform.scale_by(pygame.image.load("sprites/ui/planes/plane_station.png"), 1.2)
-planes_gui_arrow_back_frame = pygame.transform.scale_by(pygame.image.load("sprites/ui/planes/arrow_back_frame.png"), 1.2)
+gui_parking_area = load_image("sprites/ui/parking_area.png", 1.1)
+arrow_back = load_image("sprites/ui/arrow_back.png", 1.25)
+planes_gui_plane_station = load_image("sprites/ui/planes/plane_station.png", 1.2)
+planes_gui_container = load_image("sprites/ui/planes/plane_container.png", 1.135)
+planes_gui_progressbar_container = load_image("sprites/ui/planes/progressbar_container.png", 1.22)
+planes_gui_plane_name_label = load_image("sprites/ui/planes/plane_name_label.png", 1.1)
+planes_gui_not_selected_plane = load_image("sprites/ui/planes/not_selected_plane.png", 0.435)
+planes_gui_not_unlocked_plane = load_image("sprites/ui/planes/not_unlocked_plane.png", 0.435)
+planes_gui_selected_plane = load_image("sprites/ui/planes/selected_plane.png", 0.435)
+planes_gui_arrow_back_frame = load_image("sprites/ui/planes/arrow_back_frame.png", 1.2)
 visual_effects = []
 user_stats = Stats()
 scroll_speed = 1
@@ -88,59 +103,7 @@ def quit_game():
     _quit()
 
 
-class Shader:
-    def __init__(self):
-        self.ctx = moderngl.create_context()
-        self.quad_buffer = self.ctx.buffer(data=array('f', [
-            # position (x, y), uv coords (x, y)
-            -1.0, 1.0, 0.0, 0.0,  # topleft
-            1.0, 1.0, 1.0, 0.0,  # topright
-            -1.0, -1.0, 0.0, 1.0,  # bottomleft
-            1.0, -1.0, 1.0, 1.0,  # bottomright
-        ]))
-        print("Loading shaders...")
-        with open("shaders/vertex.vert") as shader_file:
-            self.vert_shader = shader_file.read()
-        with open("shaders/frag.frag") as shader_file:
-            self.frag_shader = shader_file.read()
-        print("Shaders loaded")
-        self.program = self.ctx.program(vertex_shader=self.vert_shader, fragment_shader=self.frag_shader)
-        self.render_object = self.ctx.vertex_array(self.program, [(self.quad_buffer, '2f 2f', 'vert', 'texcoord')])
-        self.shake_ammount = 0
-        self.red_overlay = 0
 
-    def get_ctx(self):
-        return self.ctx
-
-    def surf_to_texture(self, surf):
-        tex = self.ctx.texture(surf.get_size(), 4)
-        tex.filter = (moderngl.NEAREST, moderngl.NEAREST)
-        tex.swizzle = 'BGRA'
-        tex.write(surf.get_view('1'))
-        return tex
-
-    def draw(self, program_args: dict={}):
-        pygame.draw.rect(display, (0, 0, 0), (-20, -20, display.get_width()+40, display.get_height()+40), 20)
-        frame_tex = self.surf_to_texture(display)
-        frame_tex.use(0)
-        self.program["tex"] = 0
-        self.program["shake_x"] = random.uniform(-self.shake_ammount, self.shake_ammount)
-        self.program["shake_y"] = random.uniform(-self.shake_ammount, self.shake_ammount)
-        self.program["red_overlay"] = self.red_overlay
-        for arg in program_args:
-            self.program[arg] = program_args[arg]
-        # self.program["time"] = time.time()*1000
-        self.shake_ammount = round(self.shake_ammount/1.04, 2)
-        self.red_overlay = round(self.red_overlay/1.03, 2)
-        self.red_overlay -= 0.002
-        if self.shake_ammount <= 0.5:
-            self.shake_ammount = 0
-        if self.red_overlay <= 0.1:
-            self.red_overlay = 0
-        
-        self.render_object.render(mode=moderngl.TRIANGLE_STRIP)
-        pygame.display.flip()
-        frame_tex.release()
 
 
 class Mouse:
@@ -201,6 +164,9 @@ class Player:
         self.auto_controlled = False
         self.auto_rel = [0, 0]
         self.is_dummy = False
+
+    def refresh_plane(self):
+        self.plane = user_stats.get_plane()(visual_effects)
 
     def draw_healthbar(self):
         display.blit(healthbar_img, (10, 10))
@@ -263,6 +229,8 @@ class Player:
         if DEBUG:
             for box in self.plane.hitbox:
                 pygame.draw.rect(display, (255, 0, 0), (self.abs_pos[0] + box.x, self.abs_pos[1] + box.y, box.w, box.h))
+
+    def draw_gui(self):
         self.draw_healthbar()
         self.draw_coins()
 
@@ -660,7 +628,6 @@ class Level():
         self.coins = []
 
 
-shader = Shader()
 mouse = Mouse()
 player = Player()
 enemies = []

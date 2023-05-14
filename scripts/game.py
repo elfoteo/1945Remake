@@ -12,14 +12,16 @@ def pause():
     scr_copy = display.copy().convert_alpha()
     scr_copy.fill((255, 255, 255, 180), None, pygame.BLEND_RGBA_MULT)
     scr_copy_original = display.copy()
-    resume_button = Button(display.get_width() / 2 - (148 * 1.25) / 2, display.get_height()/2-35, 148 * 1.25, 40 * 1.25,
-                             'sprites/ui/green_button.png',
-                             text="Resume",
-                             font="font/font.ttf", increase_font_size=0.1)
-    exit_button = Button(display.get_width() / 2 - (148 * 1.25) / 2, display.get_height()/2+35, 148 * 1.25, 40 * 1.25,
-                             'sprites/ui/yellow_button.png',
-                             text="Exit",
-                             font="font/font.ttf", increase_font_size=0.1)
+    resume_button = Button(display.get_width() / 2 - (148 * 1.25) / 2, display.get_height() / 2 - 35, 148 * 1.25,
+                           40 * 1.25,
+                           'sprites/ui/green_button.png',
+                           text="Resume",
+                           font="font/font.ttf", increase_font_size=0.1)
+    exit_button = Button(display.get_width() / 2 - (148 * 1.25) / 2, display.get_height() / 2 + 35, 148 * 1.25,
+                         40 * 1.25,
+                         'sprites/ui/yellow_button.png',
+                         text="Exit",
+                         font="font/font.ttf", increase_font_size=0.1)
     mouse.unlock()
     unpause_timer = 3
     last_time = time.time()
@@ -35,7 +37,8 @@ def pause():
 
         if clicked_resume:
             surf = big_font.render(str(unpause_timer), True, (255, 255, 255))
-            display.blit(surf, (display.get_width()/2-surf.get_width()/2, display.get_height()/2-surf.get_height()/2))
+            display.blit(surf, (
+            display.get_width() / 2 - surf.get_width() / 2, display.get_height() / 2 - surf.get_height() / 2))
             if last_time + 1 < time.time():
                 unpause_timer -= 1
                 last_time = time.time()
@@ -53,7 +56,7 @@ def pause():
                 elif exit_button.handle_event(event):
                     mouse.unlock()
                     # TODO: defeat screen
-        shader.draw()
+        shader.draw(display)
         clock.tick(120)
 
 
@@ -96,10 +99,12 @@ def win_screen(level_name="Level 31 - EASY"):
                       60 + wings_movement * head_movement_mult))
 
         display.blit(
-            pivot_rotate(eagle_wing_bottom_r, wings_movement * bottom_wings_mult, bottom_pivot_r, pygame.Vector2(0, 0))[0],
+            pivot_rotate(eagle_wing_bottom_r, wings_movement * bottom_wings_mult, bottom_pivot_r, pygame.Vector2(0, 0))[
+                0],
             (display.get_width() / 2 - eagle_head.get_width(), 105 + win_label.get_height()))
         display.blit(
-            pivot_rotate(eagle_wing_bottom_l, -(wings_movement * bottom_wings_mult), bottom_pivot_l, pygame.Vector2(0, 0))[0],
+            pivot_rotate(eagle_wing_bottom_l, -(wings_movement * bottom_wings_mult), bottom_pivot_l,
+                         pygame.Vector2(0, 0))[0],
             (display.get_width() / 2 + eagle_head.get_width() - eagle_wing_bottom_r.get_width(),
              105 + win_label.get_height()))
 
@@ -131,14 +136,16 @@ def win_screen(level_name="Level 31 - EASY"):
         display.blit(level_banner, (display.get_width() / 2 - level_banner.get_width() / 2, 270))
         surf = normal_font.render(level_name, True, (255, 255, 255))
         display.blit(surf, (
-        display.get_width() / 2 - surf.get_width() / 2, 270 + level_banner.get_height() / 2 - surf.get_height() / 2))
+            display.get_width() / 2 - surf.get_width() / 2,
+            270 + level_banner.get_height() / 2 - surf.get_height() / 2))
 
         display.blit(level_banner, (display.get_width() / 2 - level_banner.get_width() / 2, 550))
         surf = normal_font.render("REWARDS", True, (255, 255, 255))
         display.blit(surf,
-                     (display.get_width() / 2 - surf.get_width() / 2, 550 + level_banner.get_height() / 2 - surf.get_height() / 2))
+                     (display.get_width() / 2 - surf.get_width() / 2,
+                      550 + level_banner.get_height() / 2 - surf.get_height() / 2))
 
-        display.blit(level_rewards_bg, (display.get_width()/2-level_rewards_bg.get_width()/2, 600))
+        display.blit(level_rewards_bg, (display.get_width() / 2 - level_rewards_bg.get_width() / 2, 600))
 
         pass_lvl.draw(display)
 
@@ -148,7 +155,7 @@ def win_screen(level_name="Level 31 - EASY"):
             if pass_lvl.handle_event(event):
                 return
         mouse.draw()
-        shader.draw()
+        shader.draw(display)
         clock.tick(120)
 
 
@@ -189,9 +196,9 @@ def play_level(level):
 
         if level.finished:
             player.auto_controlled = True
-            y_movment = ((level.finished_timestamp + level.finished_cooldown-time.time() * 1000)/1000-4)
+            y_movment = ((level.finished_timestamp + level.finished_cooldown - time.time() * 1000) / 1000 - 4)
             if y_movment <= 0:
-                y_movment *= 4+end_animation_y_counter*0.13
+                y_movment *= 4 + end_animation_y_counter * 0.13
                 end_animation_y_counter += 1
             player.auto_rel = [
                 0,
@@ -199,18 +206,20 @@ def play_level(level):
             ]
             player.is_dummy = True
 
-        if player.abs_pos[1] <= -5500 and level.finished: # TODO: better wait time before win, 2s timer
+        if player.abs_pos[1] <= -5500 and level.finished:  # TODO: better wait time before win, 2s timer
             player.auto_controlled = False
             win_screen(level_name=level.name)
             user_stats.data["coins"] += user_stats.data["ingame_coins"]
             user_stats.data["ingame_coins"] = 0
             return
-        player.draw()
-
+        player.draw()  # draw, update the actual plane
+        # draw the visual effects for the plane, explosions, projectiles
         for vfx in visual_effects:
             vfx.update(display)
             if vfx.ended:
                 visual_effects.remove(vfx)
+
+        player.draw_gui()  # draw the gui
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -220,6 +229,5 @@ def play_level(level):
                     pause()
 
         mouse.draw()
-        shader.draw()
+        shader.draw(display)
         clock.tick(120)
-        

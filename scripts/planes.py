@@ -8,7 +8,8 @@ flame_anim_frames = load_animation_frames("sprites/flame", scale=0.1)
 
 
 class Plane:
-    def __init__(self, guns, dmg, health, hitbox, fire_cooldown, projectiles_speed, projectile_image, base_dir, vfx):
+    def __init__(self, guns, dmg, health, hitbox, fire_cooldown, projectiles_speed, projectile_image, base_dir, vfx,
+                 name, icon):
         self.guns = guns
         self.dmg = dmg
         self.health = health
@@ -20,6 +21,8 @@ class Plane:
         self.projectile_image = projectile_image
         self.base_dir = base_dir
         self.vfx = vfx
+        self.name = name
+        self.icon = icon
         self.abs_pos = [0, 0]
         self.frame_dict = {
 
@@ -50,7 +53,7 @@ class Plane:
         self.image = self.frame_dict[key]
         if motion >= 0:
             self.image = pygame.transform.flip(self.image, True, False)
-        
+
         if not is_dummy:
             self.shoot_projectiles(abs_pos)
         self.projectiles.draw(screen, enemies)
@@ -74,9 +77,11 @@ class GrummanF3F(Plane):
         projectiles_speed = 7
         projectiles_dmg = 8
         base_dir = "sprites/planes/grumman_f3f/"
+        name = "Grumman F3F"
+        icon = pygame.transform.scale_by(pygame.image.load(base_dir + "icon.png"), 0.8)
         projectile_image = pygame.transform.scale_by(pygame.image.load(base_dir + "projectile.png"), projectile_scale)
         super().__init__(guns, projectiles_dmg, health, hitbox, fire_cooldown, projectiles_speed, projectile_image,
-                         base_dir, vfx)
+                         base_dir, vfx, name, icon)
         self.frame_dict = {
             "t1": pygame.transform.scale_by(pygame.image.load(base_dir + "t1.png"), image_scale),
             "t2": pygame.transform.scale_by(pygame.image.load(base_dir + "t2.png"), image_scale),
@@ -107,9 +112,11 @@ class Boeing_P26_Peashooter(Plane):
         projectiles_speed = 5
         projectiles_dmg = 5
         base_dir = "sprites/planes/boeing_p-26_peashooter/"
+        name = "Boeing P26 Peashooter"
+        icon = pygame.transform.scale_by(pygame.image.load(base_dir + "icon.png"), 0.8)
         projectile_image = pygame.transform.scale_by(pygame.image.load(base_dir + "projectile.png"), projectile_scale)
         super().__init__(guns, projectiles_dmg, health, hitbox, fire_cooldown, projectiles_speed, projectile_image,
-                         base_dir, vfx)
+                         base_dir, vfx, name, icon)
         self.frame_dict = {
             "t1": pygame.transform.scale_by(pygame.image.load(base_dir + "t1.png"), image_scale),
             "t2": pygame.transform.scale_by(pygame.image.load(base_dir + "t2.png"), image_scale),
@@ -140,8 +147,10 @@ class SEPECAT_Jaguar(Plane):
         projectile_image = pygame.transform.scale_by(pygame.image.load(base_dir + "projectile.png"), projectile_scale)
         projectile_trail = pygame.transform.scale_by(pygame.image.load(base_dir + "projectile_trail.png"),
                                                      projectile_scale)
+        name = "SEPECAT Jaguar"
+        icon = pygame.transform.scale_by(pygame.image.load(base_dir + "icon.png"), 0.8)
         super().__init__(guns, projectiles_dmg, health, hitbox, fire_cooldown, projectiles_speed, projectile_image,
-                         base_dir, vfx)
+                         base_dir, vfx, name, icon)
         self.projectiles = TrailProjectiles(guns, projectile_image, projectile_trail, projectiles_speed,
                                             fire_cooldown, projectiles_dmg, vfx, (self.get_x, self.get_y))
         self.frame_dict = {
@@ -175,9 +184,11 @@ class ARSENAL_Delanne_10(Plane):
                                                             projectile_scale)
         projectile_left_image = pygame.transform.scale_by(pygame.image.load(base_dir + "side_projectile.png"),
                                                           projectile_scale)
+        name = "ARSENAL Delanne 10"
+        icon = pygame.transform.scale_by(pygame.image.load(base_dir + "icon.png"), 0.8)
         super().__init__(guns, projectiles_dmg, health, hitbox, fire_cooldown, projectiles_speed,
                          projectile_center_image,
-                         base_dir, vfx)
+                         base_dir, vfx, name, icon)
         self.projectiles = DelanneProjectiles(guns, projectile_center_image, projectile_left_image, projectiles_speed,
                                               fire_cooldown, projectiles_dmg, vfx, (self.get_x, self.get_y))
         self.frame_dict = {
@@ -208,14 +219,16 @@ class P_61_Black_Widow(Plane):
         projectiles_speed = 8
         projectiles_dmg = 6
         base_dir = "sprites/planes/p-61_black_widow/"
+        icon = pygame.transform.scale_by(pygame.image.load(base_dir + "icon.png"), 0.8)
         normal_projectiles = pygame.transform.smoothscale_by(pygame.image.load(base_dir + "projectile_1.png"),
-                                                        projectile_scale)
+                                                             projectile_scale)
 
         special_projectiles = pygame.transform.smoothscale_by(pygame.image.load(base_dir + "projectile_2.png"),
-                                                        projectile_scale)
+                                                              projectile_scale)
+        name = "P 61 Black Widow"
         super().__init__(guns, projectiles_dmg, health, hitbox, fire_cooldown, projectiles_speed,
                          normal_projectiles,
-                         base_dir, vfx)
+                         base_dir, vfx, name, icon)
         self.projectiles = Projectiles(guns, normal_projectiles, projectiles_speed,
                                        fire_cooldown, projectiles_dmg, vfx, (self.get_x, self.get_y))
 
@@ -275,9 +288,11 @@ class F_86_Sabre(Plane):
         base_dir = "sprites/planes/f-86_sabre/"
         normal_projectiles = pygame.transform.scale_by(pygame.image.load(base_dir + "projectile.png"),
                                                        projectile_scale)
+        name = "F 86 Sabre"
+        icon = pygame.transform.scale_by(pygame.image.load(base_dir + "icon.png"), 0.8)
         super().__init__(guns, projectiles_dmg, health, hitbox, fire_cooldown, projectiles_speed,
                          normal_projectiles,
-                         base_dir, vfx)
+                         base_dir, vfx, name, icon)
         self.frame_dict = {
             "t1": pygame.transform.scale_by(pygame.image.load(base_dir + "t1.png"), image_scale),
             "t2": pygame.transform.scale_by(pygame.image.load(base_dir + "t2.png"), image_scale),
@@ -290,8 +305,8 @@ class F_86_Sabre(Plane):
         self.wait_time = 0
         self.max_wait_time = 30
         self.engines = [
-            [21*image_scale, 96*image_scale],
-            [128*image_scale, 96*image_scale]
+            [21 * image_scale, 96 * image_scale],
+            [128 * image_scale, 96 * image_scale]
         ]
 
     def update(self, motion, screen, enemies, abs_pos, is_dummy=False):
@@ -302,3 +317,12 @@ class F_86_Sabre(Plane):
                 self.vfx.append(VFX(flame_anim_frames, engine[0], engine[1], delay=self.flame_delay,
                                     anchor=(self.get_x, self.get_y), offset=(engine[0], engine[1])))
             self.wait_time = 0
+
+
+def init():
+    global all_planes
+    all_planes = [GrummanF3F(None), Boeing_P26_Peashooter(None), SEPECAT_Jaguar(None), ARSENAL_Delanne_10(None),
+                  P_61_Black_Widow(None), F_86_Sabre(None)]
+
+
+all_planes = []

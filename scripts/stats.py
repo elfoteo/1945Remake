@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from scripts.utils import strfdelta
 from scripts.planes import *
 
+
 class Stats:
     def __init__(self):
         print("Loading Stats...")
@@ -33,9 +34,12 @@ class Stats:
             os.mkdir("User Data")
         self.data["ingame_coins"] = 0
         pickle.dump(self.data, open("User Data/stats", "wb"))
-        
+
     def get_plane(self):
         return self.data["selected_plane"]
+
+    def set_plane(self, new_plane):
+        self.data["selected_plane"] = new_plane
 
     def update_dogtags(self):
         self.dogtags_full = self.data["dogtags"] >= self.dogtags_limit
@@ -43,21 +47,20 @@ class Stats:
             self.data["dogtags_timestamp"] = round(time.time())
         else:
             current_time = round(time.time())
-            if int((current_time-self.data["dogtags_timestamp"])/self.dogtags_cooldown) >= 1:
-                add_ammount = (current_time-self.data["dogtags_timestamp"])/self.dogtags_cooldown
+            if int((current_time - self.data["dogtags_timestamp"]) / self.dogtags_cooldown) >= 1:
+                add_ammount = (current_time - self.data["dogtags_timestamp"]) / self.dogtags_cooldown
                 self.data["dogtags"] += int(add_ammount)
                 self.data["dogtags"] = min(self.data["dogtags"], self.dogtags_limit)
                 self.data["dogtags_timestamp"] = round(time.time())
-            
-        
+
     def get_next_dogtag_time(self):
         if self.data["dogtags"] < self.dogtags_limit:
             current_time = datetime.fromtimestamp(round(time.time()))
-            elapsed = current_time-datetime.fromtimestamp(self.data["dogtags_timestamp"])
-            till_next = timedelta(seconds=self.dogtags_cooldown)-elapsed
-            return strfdelta(till_next,"{minutes}:{seconds}")
+            elapsed = current_time - datetime.fromtimestamp(self.data["dogtags_timestamp"])
+            till_next = timedelta(seconds=self.dogtags_cooldown) - elapsed
+            return strfdelta(till_next, "{minutes}:{seconds}")
         else:
-            return strfdelta(timedelta(seconds=self.dogtags_cooldown),"{minutes}:{seconds}")
+            return strfdelta(timedelta(seconds=self.dogtags_cooldown), "{minutes}:{seconds}")
 
     def add_coins(self, amount):
         self.data["coins"] += amount
@@ -69,4 +72,3 @@ class Stats:
         if self.data[currency] >= cost:
             return True
         return False
-

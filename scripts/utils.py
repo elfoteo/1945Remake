@@ -46,6 +46,22 @@ def load_animation_frames(directory, scale=None):
     return frames
 
 
+def load_image(file, scale=None, no_scale_by=False, alpha=True):
+    if scale is None:
+        if no_scale_by:
+            scale = None
+        else:
+            scale = 1
+    print("Loaded", file)
+    if no_scale_by:
+        if alpha:
+            return pygame.transform.scale(pygame.image.load(file), scale).convert_alpha()
+        return pygame.transform.scale(pygame.image.load(file), scale).convert()
+    if alpha:
+        return pygame.transform.scale_by(pygame.image.load(file), scale).convert_alpha()
+    return pygame.transform.scale_by(pygame.image.load(file), scale).convert()
+
+
 def transparent_rect(size, intensity):
     """Returns a transparent texture with custom size and intensity"""
     w, h = size

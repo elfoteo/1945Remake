@@ -1,10 +1,10 @@
 import random
-
 import pygame.font
 
 from scripts.game import *
 from scripts.button import *
 from scripts.label import Label
+from scripts.planes import all_planes
 
 font = pygame.font.Font("font/font.ttf", 16)
 
@@ -59,23 +59,30 @@ dogtags_gui_close = TexturedButton(
     dogtags_bg_pos[1] - 5, gui_close.get_width(), gui_close.get_height(),
     gui_close, gui_close_hover)
 
-
 dogtags_gui = pygame.Surface(display.get_size(), pygame.SRCALPHA)
 dogtags_gui.blit(buy_dogtags, dogtags_bg_pos)
 dogtags_gui.blit(text_label, (display.get_width() / 2 - text_label.get_width() / 2, dogtags_bg_pos[1] - 5))
 surf = gui_title_font.render("CHARGE DOGTAG", False, (255, 255, 255))
 dogtags_gui.blit(surf, (display.get_width() / 2 - surf.get_width() / 2, 430 - buy_dogtags.get_height() / 2))
 dogtags_gui.blit(dogtags_pile, (display.get_width() / 2 - dogtags_pile.get_width() / 2, 200))
-dogtags_gui.blit(single_dogtag, (purchase_100_dogtags.rect.centerx - 175, purchase_100_dogtags.rect.centery - single_dogtag.get_height() / 2))
-dogtags_gui.blit(single_dogtag, (purchase_30_dogtags.rect.centerx - 175, purchase_30_dogtags.rect.centery - single_dogtag.get_height() / 2))
-dogtags_gui.blit(single_dogtag, (purchase_100_dogtags.rect.centerx - 175, purchase_100_dogtags.rect.centery - single_dogtag.get_height() / 2))
+dogtags_gui.blit(single_dogtag, (
+    purchase_100_dogtags.rect.centerx - 175, purchase_100_dogtags.rect.centery - single_dogtag.get_height() / 2))
+dogtags_gui.blit(single_dogtag, (
+    purchase_30_dogtags.rect.centerx - 175, purchase_30_dogtags.rect.centery - single_dogtag.get_height() / 2))
+dogtags_gui.blit(single_dogtag, (
+    purchase_100_dogtags.rect.centerx - 175, purchase_100_dogtags.rect.centery - single_dogtag.get_height() / 2))
 surf = dogtags_timer_font.render("x100", False, (255, 255, 255))
-dogtags_gui.blit(surf, (purchase_100_dogtags.rect.centerx - 125, purchase_100_dogtags.rect.centery - surf.get_height() / 2))
+dogtags_gui.blit(surf,
+                 (purchase_100_dogtags.rect.centerx - 125, purchase_100_dogtags.rect.centery - surf.get_height() / 2))
 surf = dogtags_timer_font.render("x30", False, (255, 255, 255))
-dogtags_gui.blit(surf, (purchase_30_dogtags.rect.centerx - 125, purchase_30_dogtags.rect.centery - surf.get_height() / 2))
-dogtags_gui.blit(single_dogtag, (purchase_30_dogtags.rect.centerx - 175, purchase_30_dogtags.rect.centery - single_dogtag.get_height() / 2))
+dogtags_gui.blit(surf,
+                 (purchase_30_dogtags.rect.centerx - 125, purchase_30_dogtags.rect.centery - surf.get_height() / 2))
+dogtags_gui.blit(single_dogtag, (
+    purchase_30_dogtags.rect.centerx - 175, purchase_30_dogtags.rect.centery - single_dogtag.get_height() / 2))
 
 parking_area_1 = Button(50, 200, gui_parking_area.get_width(), gui_parking_area.get_height(), gui_parking_area)
+arrow_back_btn = Button(57 * 1.2 - 40, display.get_height() - planes_gui_arrow_back_frame.get_height() + 33 * 1.2,
+                        arrow_back.get_width(), arrow_back.get_height(), arrow_back)
 plane_vfx = []
 plane_1_scale = 1.3
 
@@ -83,6 +90,9 @@ current_plane = user_stats.get_plane()(plane_vfx)
 # 0: main gui, 1 dogtags shop, 2 planes menu
 current_gui = 0
 blit_main_gui = True
+was_mouse_button_down = False
+mouse_button_up_event = False
+# Drawing all main-menu GUIs it may be complex but is really easy, the difficult part is to position all the elements
 while True:
     plane_surf = pygame.Surface(current_plane.image.get_size(), pygame.SRCALPHA)
     user_stats.update_dogtags()
@@ -108,8 +118,8 @@ while True:
                 plane_vfx.remove(vfx)
 
         surf = pygame.transform.scale_by(plane_surf, plane_1_scale)
-        display.blit(surf, (parking_area_1.rect.x+parking_area_1.rect.w/2-surf.get_width()/2,
-                            parking_area_1.rect.y+parking_area_1.rect.h/2-surf.get_height()/2-15))
+        display.blit(surf, (parking_area_1.rect.x + parking_area_1.rect.w / 2 - surf.get_width() / 2,
+                            parking_area_1.rect.y + parking_area_1.rect.h / 2 - surf.get_height() / 2 - 24))
 
     if current_gui == 1:
         display.blit(transparent_overlay, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
@@ -124,7 +134,6 @@ while True:
                          (display.get_width() / 2 + buy_dogtags.get_width() / 2 - gui_close.get_width() / 2 - 15,
                           dogtags_bg_pos[1] - 5))
 
-        
         if user_stats.dogtags_full:
             surf = dogtags_timer_font.render("Full Dogtag!", False, (183, 240, 80))
             display.blit(surf, (display.get_width() / 2 - surf.get_width() / 2, 375))
@@ -140,10 +149,74 @@ while True:
         display.blit(gem_icon, (
             purchase_100_dogtags.rect.centerx + 10, purchase_100_dogtags.rect.centery - gem_icon.get_height() / 2))
     elif current_gui == 2:
-        display.blit(planes_gui_planes_station, (display.get_width()/2-planes_gui_planes_station.get_width()/2, coins_label.get_height()))
-        display.blit(planes_gui_arrow_back_frame, (-40, display.get_height()-planes_gui_arrow_back_frame.get_height()))
-        display.blit(arrow_back, (16-arrow_back.get_width()/2, display.get_height()-planes_gui_arrow_back_frame.get_height()+31-arrow_back.get_height()/2))
+        x = 0
+        y = 0
+        plane_img_scale = 0.435
+        for plane in all_planes:
+            if plane.name != current_plane.name:
+                base_coord = (5 + x * 237 * plane_img_scale,
+                              display.get_height() - planes_gui_container.get_height() + planes_gui_plane_name_label.get_height() + 2 + y * 246 * plane_img_scale)
+                display.blit(planes_gui_not_selected_plane, base_coord)
+                display.blit(plane.icon, (
+                base_coord[0] + planes_gui_not_selected_plane.get_width() / 2 - plane.icon.get_width() / 2,
+                base_coord[1] + planes_gui_not_selected_plane.get_height() / 2 - plane.icon.get_height() / 2 - 10))
+                if mouse_button_up_event and not was_mouse_button_down and pygame.Rect(base_coord[0], base_coord[1],
+                                                       planes_gui_not_selected_plane.get_width(),
+                                                       planes_gui_not_selected_plane.get_height()).collidepoint(
+                        mouse.get_pos()):
+                    plane_vfx = []
+                    current_plane = type(plane)(plane_vfx)
+                    user_stats.set_plane(type(plane))
+                    player.refresh_plane()
+            x += 1
+            if x >= 4:
+                y += 1
+                x = 0
+        display.blit(planes_gui_container, (
+            0, display.get_height() - planes_gui_container.get_height() + planes_gui_plane_name_label.get_height()))
+        # 2 loops to blit the selected plane on top of the unselected ones
+        x = 0
+        y = 0
+        for plane in all_planes:
+            if plane.name == current_plane.name:
+                base_coord = (5 + x * 237 * plane_img_scale,
+                              display.get_height() - planes_gui_container.get_height() + planes_gui_plane_name_label.get_height() + 2 + y * 246 * plane_img_scale)
+                display.blit(planes_gui_selected_plane, (5 + x * 237 * plane_img_scale,
+                                                         display.get_height() - planes_gui_container.get_height() + planes_gui_plane_name_label.get_height() + 2 + y * 246 * plane_img_scale))
+                new_icon = pygame.transform.scale_by(plane.icon, 1.07)
+                display.blit(plane.icon, (
+                base_coord[0] + planes_gui_not_selected_plane.get_width() / 2 - plane.icon.get_width() / 2,
+                base_coord[1] + planes_gui_not_selected_plane.get_height() / 2 - plane.icon.get_height() / 2 - 10))
 
+            x += 1
+            if x >= 4:
+                y += 1
+                x = 0
+        display.blit(planes_gui_plane_station,
+                     (display.get_width() / 2 - planes_gui_plane_station.get_width() / 2, coins_label.get_height()))
+        display.blit(planes_gui_plane_name_label,
+                     (display.get_width() / 2 - planes_gui_plane_name_label.get_width() / 2,
+                      display.get_height() - planes_gui_container.get_height() - planes_gui_progressbar_container.get_height() + 45))
+        surf = font.render(current_plane.name, True, (255, 255, 255))
+        display.blit(surf, (display.get_width() / 2 - surf.get_width() / 2,
+                            display.get_height() - planes_gui_container.get_height() - planes_gui_progressbar_container.get_height() + 45 + planes_gui_plane_name_label.get_height() / 2 - surf.get_height() / 2))
+        display.blit(planes_gui_progressbar_container, (
+            display.get_width() / 2 - planes_gui_progressbar_container.get_width() / 2,
+            display.get_height() - planes_gui_container.get_height() - planes_gui_progressbar_container.get_height()))
+        display.blit(planes_gui_arrow_back_frame,
+                     (-40, display.get_height() - planes_gui_arrow_back_frame.get_height()))
+        arrow_back_btn.draw(display)
+        current_plane.update(0, plane_surf, [], (0, 0), is_dummy=True)
+        plane_surf.blit(current_plane.image,
+                        (0, 0))
+        for vfx in plane_vfx:
+            vfx.update(plane_surf)
+            if vfx.ended:
+                plane_vfx.remove(vfx)
+        surf = pygame.transform.scale_by(plane_surf, plane_1_scale)
+        display.blit(surf, (display.get_width() / 2 - surf.get_width() / 2,
+                            coins_label.get_height() - 32 + 120 - surf.get_height() / 2))
+    mouse_button_up_event = False
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             quit_game()
@@ -160,7 +233,7 @@ while True:
                 blit_main_gui = False
         elif current_gui == 1:
             if purchase_100_dogtags.handle_event(event) and \
-                user_stats.can_purchase("gems", 30):
+                    user_stats.can_purchase("gems", 30):
                 user_stats.data["gems"] -= 30
                 user_stats.data["dogtags"] += 100
 
@@ -172,13 +245,26 @@ while True:
             if dogtags_gui_close.handle_event(event):
                 current_gui = 0
         elif current_gui == 2:
-            pass
+            if arrow_back_btn.handle_event(event):
+                current_gui = 0
+                blit_main_gui = True
 
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
                 if dogtags_plus_rect.collidepoint(mouse.get_pos()):
                     current_gui = 1
-    
+                mouse_button_up_event = True
+
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_ESCAPE:
+                if current_gui == 1:
+                    current_gui = 0
+                elif current_gui == 2:
+                    current_gui = 0
+                    blit_main_gui = True
+
+    if current_gui == 0:
+        blit_main_gui = True
     mouse.draw()
-    shader.draw()  # , "time": shader_time
+    shader.draw(display)  # , "time": shader_time
     clock.tick(120)
