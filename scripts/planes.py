@@ -278,8 +278,8 @@ class F_86_Sabre(Plane):
             [101 * image_scale, 36 * image_scale, 98],
         ]
         hitbox = [
-            pygame.Rect(0 * image_scale, 34 * image_scale, 150 * image_scale, 59 * image_scale),
-            pygame.Rect(0 * image_scale, 63 * image_scale, 24 * image_scale, 125 * image_scale)
+            pygame.Rect(0 * image_scale, 52 * image_scale, 150 * image_scale, 41 * image_scale),
+            pygame.Rect(47 * image_scale, 0 * image_scale, 56 * image_scale, 128 * image_scale)
         ]
         health = 100
         fire_cooldown = 385

@@ -6,20 +6,18 @@ from scripts.button import *
 from scripts.label import Label
 from scripts.planes import all_planes
 
-font = pygame.font.Font("font/font.ttf", 16)
-
 cy = -300
-for i in range(10):
+for i in range(0):  # 120
     cy -= random.randint(50, 250)
     a = random.randint(0, 5)
     if a == 0:
-        enemies.append(BulletBomb([
+        enemies.append(NormalEnemy([
             random.randint(enemy_normal_img.get_width(), display.get_width() - enemy_normal_img.get_width()), cy]))
     elif a == 1:
-        enemies.append(BulletBomb([
+        enemies.append(NormalEnemy2([
             random.randint(enemy_normal_img.get_width(), display.get_width() - enemy_normal_img.get_width()), cy]))
     elif a == 2:
-        enemies.append(BulletBomb([
+        enemies.append(EnemyShooter6Dir([
             random.randint(enemy_normal_img.get_width(), display.get_width() - enemy_normal_img.get_width()), cy]))
     elif a == 3:
         enemies.append(BulletBomb([
@@ -30,13 +28,13 @@ for i in range(10):
 
 mouse.unlock()
 singleplayer_button = Button(display.get_width() / 2 - (148 * 1.5) / 2, 700, 148 * 1.5, 37 * 1.5,
-                             'sprites/ui/green_button.png',
+                             green_button,
                              text="Single Player",
                              font="font/font.ttf", increase_font_size=0.1)
 
-dogtags_label = Label(user_stats.data["dogtags"], dogtag_icon, (0, 0), font, suffix="/100")
-coins_label = Label(user_stats.data["coins"], coin_icon, (dogtags_label.get_width(), 0), font)
-gems_label = Label(user_stats.data["gems"], gem_icon, (coins_label.get_width() + dogtags_label.get_width(), 0), font)
+dogtags_label = Label(user_stats.data["dogtags"], dogtag_icon, (0, 0), font_small, suffix="/100")
+coins_label = Label(user_stats.data["coins"], coin_icon, (dogtags_label.get_width(), 0), font_small)
+gems_label = Label(user_stats.data["gems"], gem_icon, (coins_label.get_width() + dogtags_label.get_width(), 0), font_small)
 
 level1 = Level(enemies, 1, 1)
 
@@ -84,7 +82,7 @@ parking_area_1 = Button(50, 200, gui_parking_area.get_width(), gui_parking_area.
 arrow_back_btn = Button(57 * 1.2 - 40, display.get_height() - planes_gui_arrow_back_frame.get_height() + 33 * 1.2,
                         arrow_back.get_width(), arrow_back.get_height(), arrow_back)
 plane_vfx = []
-plane_1_scale = 1.3
+plane_parking_scale = 1.3
 
 current_plane = user_stats.get_plane()(plane_vfx)
 # 0: main gui, 1 dogtags shop, 2 planes menu
@@ -92,7 +90,8 @@ current_gui = 0
 blit_main_gui = True
 was_mouse_button_down = False
 mouse_button_up_event = False
-# Drawing all main-menu GUIs it may be complex but is really easy, the difficult part is to position all the elements
+# Drawing all main-menu GUIs it may seem complex but is really easy,
+# the difficult part is to position all the elements right
 while True:
     plane_surf = pygame.Surface(current_plane.image.get_size(), pygame.SRCALPHA)
     user_stats.update_dogtags()
@@ -117,7 +116,7 @@ while True:
             if vfx.ended:
                 plane_vfx.remove(vfx)
 
-        surf = pygame.transform.scale_by(plane_surf, plane_1_scale)
+        surf = pygame.transform.scale_by(plane_surf, plane_parking_scale)
         display.blit(surf, (parking_area_1.rect.x + parking_area_1.rect.w / 2 - surf.get_width() / 2,
                             parking_area_1.rect.y + parking_area_1.rect.h / 2 - surf.get_height() / 2 - 24))
 
@@ -197,7 +196,7 @@ while True:
         display.blit(planes_gui_plane_name_label,
                      (display.get_width() / 2 - planes_gui_plane_name_label.get_width() / 2,
                       display.get_height() - planes_gui_container.get_height() - planes_gui_progressbar_container.get_height() + 45))
-        surf = font.render(current_plane.name, True, (255, 255, 255))
+        surf = font_small.render(current_plane.name, True, (255, 255, 255))
         display.blit(surf, (display.get_width() / 2 - surf.get_width() / 2,
                             display.get_height() - planes_gui_container.get_height() - planes_gui_progressbar_container.get_height() + 45 + planes_gui_plane_name_label.get_height() / 2 - surf.get_height() / 2))
         display.blit(planes_gui_progressbar_container, (
@@ -213,7 +212,7 @@ while True:
             vfx.update(plane_surf)
             if vfx.ended:
                 plane_vfx.remove(vfx)
-        surf = pygame.transform.scale_by(plane_surf, plane_1_scale)
+        surf = pygame.transform.scale_by(plane_surf, plane_parking_scale)
         display.blit(surf, (display.get_width() / 2 - surf.get_width() / 2,
                             coins_label.get_height() - 32 + 120 - surf.get_height() / 2))
     mouse_button_up_event = False

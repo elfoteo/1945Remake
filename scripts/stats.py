@@ -65,6 +65,9 @@ class Stats:
     def add_coins(self, amount):
         self.data["coins"] += amount
 
+    def add_gems(self, amount):
+        self.data["gems"] += amount
+
     def add_ingame_coins(self, amount):
         self.data["ingame_coins"] += amount
 

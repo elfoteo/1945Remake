@@ -1,5 +1,3 @@
-import math
-
 import pygame.font
 from scripts import planes
 from scripts.projectiles import *
@@ -8,8 +6,6 @@ from scripts.utils import *
 from scripts.utils import _quit
 from scripts.vfx import VFX
 from scripts.shader import Shader, ShaderDisplay
-from array import array
-import moderngl
 
 # init pygame and custom modules
 pygame.init()
@@ -20,10 +16,9 @@ display = ShaderDisplay(screen.get_size())
 shader = Shader()
 
 loading_logo_img = load_image("sprites/ui/loading.png", 0.6)
-display.blit(loading_logo_img, (display.get_width()/2-loading_logo_img.get_width()/2,
-                                display.get_height()/2-loading_logo_img.get_height()/2))
+display.blit(loading_logo_img, (display.get_width() / 2 - loading_logo_img.get_width() / 2,
+                                display.get_height() / 2 - loading_logo_img.get_height() / 2))
 shader.draw(display)
-time.sleep(10)
 clock = pygame.time.Clock()
 DEBUG = False
 if DEBUG:
@@ -31,8 +26,8 @@ if DEBUG:
 # TODO: better healthbar
 planes.init()  # initialize the plane module adding all planes to the "all_planes" list
 # load all images
-healthbar_img = load_image("sprites/ui/ingame/healthbar.png", (290 / 2 * 1.2, 56 / 2 * 1.2), no_scale_by=True)
-enemy_normal_img = load_image("sprites/enemies/enemy_normal.png", (110 / 4 * 2.5, 90 / 4 * 2.5), no_scale_by=True)
+healthbar_img = load_image("sprites/ui/ingame/healthbar.png", 0.6)
+enemy_normal_img = load_image("sprites/enemies/enemy_normal.png", 0.6)
 enemy_projectile_img = load_image("sprites/bombs/bullet_bomb/projectile.png")
 enemy_normal2_frames = load_animation_frames("sprites/enemies/enemy_normal2")
 rotating_enemy_frames = load_animation_frames("sprites/enemies/rotating_enemy")
@@ -87,23 +82,23 @@ planes_gui_not_selected_plane = load_image("sprites/ui/planes/not_selected_plane
 planes_gui_not_unlocked_plane = load_image("sprites/ui/planes/not_unlocked_plane.png", 0.435)
 planes_gui_selected_plane = load_image("sprites/ui/planes/selected_plane.png", 0.435)
 planes_gui_arrow_back_frame = load_image("sprites/ui/planes/arrow_back_frame.png", 1.2)
+green_button = load_image('sprites/ui/green_button.png', 1.5)
+pile_of_coins = load_image('sprites/ui/level/pile_of_coins.png', 1)
+pile_of_gems = load_image('sprites/ui/level/pile_of_gems.png', 1)
 visual_effects = []
 user_stats = Stats()
 scroll_speed = 1
 coins = []
 
+font_small = pygame.font.Font("font/font.ttf", 16)
+font_medium_small = pygame.font.Font("font/font.ttf", 20)
 font = pygame.font.Font("font/font.ttf", 30)
 big_font = pygame.font.Font("font/font.ttf", 58)
-
-# TODO: Fix image imports
 
 
 def quit_game():
     user_stats.save()
     _quit()
-
-
-
 
 
 class Mouse:
@@ -140,7 +135,7 @@ class Mouse:
     def lock(self):
         self.set_grab(True)
         self.set_visible(False)
-    
+
     @staticmethod
     def get_pos():
         return pygame.mouse.get_pos()
@@ -156,7 +151,7 @@ class Player:
                                    display.get_width(),
                                    display.get_height()))
         self.plane = user_stats.get_plane()(visual_effects)
-        self.default_spawn_pos = [display.get_width()/2, display.get_height()-self.plane.image.get_height()*4]
+        self.default_spawn_pos = [display.get_width() / 2, display.get_height() - self.plane.image.get_height() * 4]
         self.pos = self.default_spawn_pos
         self.abs_pos = self.pos
         self.average_motion_x = 0
@@ -181,8 +176,8 @@ class Player:
     def collides(self, hitboxes):
         for hitbox in hitboxes:
             for plane_hitbox in self.plane.hitbox:
-                real_hitbox = pygame.Rect(self.abs_pos[0]+plane_hitbox.x,
-                                          self.abs_pos[1]+plane_hitbox.y,
+                real_hitbox = pygame.Rect(self.abs_pos[0] + plane_hitbox.x,
+                                          self.abs_pos[1] + plane_hitbox.y,
                                           plane_hitbox.w,
                                           plane_hitbox.h)
                 if hitbox.colliderect(real_hitbox):
@@ -205,7 +200,7 @@ class Player:
             mx, my = mouse.rel
         else:
             mx, my = self.auto_rel
-        
+
         if pygame.mouse.get_pressed()[0]:
             self.motion_history.append([mx, time.time()])
         else:
@@ -219,7 +214,8 @@ class Player:
 
         if pygame.mouse.get_pressed()[0] and self.window.collidepoint((self.pos[0] + mx, self.pos[1])):
             self.pos[0] += mx
-        if (pygame.mouse.get_pressed()[0] and self.window.collidepoint((self.pos[0], self.pos[1] + my))) or self.auto_controlled:
+        if (pygame.mouse.get_pressed()[0] and self.window.collidepoint(
+                (self.pos[0], self.pos[1] + my))) or self.auto_controlled:
             self.pos[1] += my
         self.abs_pos = (self.pos[0] - self.plane.image.get_width() / 2, self.pos[1] - self.plane.image.get_height() / 2)
         self.plane.update(self.average_motion_x, display, enemies, self.abs_pos, is_dummy=self.is_dummy)
@@ -239,12 +235,10 @@ class Coin:
     def __init__(self, value, pos):
         self.value = value
         self.pos = pos
-        if self.value == 1:
+        if self.value <= 4:
             self.frames = coin1_frames
-        elif self.value == 5:
+        elif self.value >= 5:
             self.frames = coin5_frames
-        else:
-            raise ValueError("Invalid coins value")
         self.index = 0
         self.last_frame = time.time() * 1000
         self.delay = 120
@@ -312,7 +306,7 @@ class Enemy:
                               (self.image.get_width() / 4 * 2) * (self.health / self.max_health), 5))
 
     def on_death(self):
-        coins.append(Coin(1, [self.pos[0]+self.image.get_width()/2, self.pos[1]+self.image.get_height()/2]))
+        coins.append(Coin(1, [self.pos[0] + self.image.get_width() / 2, self.pos[1] + self.image.get_height() / 2]))
         if self.particles_on_death:
             visual_effects.append(
                 VFX(death_frames, self.pos[0] + self.image.get_width() / 4, self.pos[1] + self.image.get_height() + 5,
@@ -344,12 +338,13 @@ class Enemy:
 
 
 class NormalEnemy(Enemy):
-    def __init__(self, speed, pos):
+    def __init__(self, pos):
         enemy_projectiles = EnemyProjectiles([], 0, display, 99999)
         image = enemy_normal_img
         health = 75
-        hitbox = [pygame.Rect((round(47 / 4 * 2.5), round(3 / 4 * 2.5), round(16 / 4 * 2.5), round(87 / 4 * 2.5))),
-                  pygame.Rect((round(0 / 4 * 2.5), round(44 / 4 * 2.5), round(110 / 4 * 2.5), round(22 / 4 * 2.5)))]
+        speed = 1
+        hitbox = [pygame.Rect((round(47 * 0.6), round(3 * 0.6), round(16 * 0.6), round(87 * 0.6))),
+                  pygame.Rect((round(0 * 0.6), round(44 * 0.6), round(110 * 0.6), round(22 * 0.6)))]
         super().__init__(speed, health, enemy_projectiles, image, pos, hitbox)
 
 
@@ -362,8 +357,8 @@ class NormalEnemy2(Enemy):
         self.frame_delay = 120
         self.next_frame = time.time() * 1000
         self.frame_index = 0
-        hitbox = [pygame.Rect((round(31 / 4 * 3), round(0 / 4 * 3), round(11 / 4 * 3), round(56 / 4 * 3))),
-                  pygame.Rect((round(0 / 4 * 3), round(25 / 4 * 3), round(73 / 4 * 3), round(18 / 4 * 3)))]
+        hitbox = [pygame.Rect((round(31), round(00), round(110), round(560))),
+                  pygame.Rect((round(0), round(250), round(730), round(180)))]
         super().__init__(speed, health, enemy_projectiles, image, pos, hitbox)
 
     def draw(self):
@@ -394,7 +389,7 @@ class FollowingEnemy(Enemy):
 
     def draw(self):
         if display.get_rect().colliderect(
-                pygame.Rect(self.hitbox[0].x+self.pos[0], self.hitbox[0].y+self.pos[1],
+                pygame.Rect(self.hitbox[0].x + self.pos[0], self.hitbox[0].y + self.pos[1],
                             self.hitbox[0].w, self.hitbox[0].h)):
             self.speed = 0
         if self.speed == 0:
@@ -402,13 +397,13 @@ class FollowingEnemy(Enemy):
                 angle = 90
             else:
                 angle = angle_between_points(self.pos, player.pos)
-            self.current_angle += (angle-self.current_angle)/15
+            self.current_angle += (angle - self.current_angle) / 15
             motion = angle_to_motion(self.current_angle, self.base_speed)
             if self.pos[1] < player.pos[1]:
                 self.pos[0] += motion[0]
             self.pos[1] += self.base_speed
-            self.image = pivot_rotate(self.base_image, self.current_angle-90, (self.base_image.get_width()/2,
-                                                                                  self.base_image.get_height()/2),
+            self.image = pivot_rotate(self.base_image, self.current_angle - 90, (self.base_image.get_width() / 2,
+                                                                                 self.base_image.get_height() / 2),
                                       pygame.Vector2(0, 0))[0]
         super().draw()
 
@@ -472,13 +467,13 @@ class LaserEnemy(Enemy):
         super().__init__(speed, health, enemy_projectiles, image, pos, hitbox, auto_shoot=False, auto_move=False)
         self.laser_cooldown = 6000
         self.laser_duration = 3000
-        self.last_laser_active = time.time()*1000
+        self.last_laser_active = time.time() * 1000
         self.laser_active = False
         self.last_shoot = time.time() * 1000
 
     def draw(self):
         super().draw()
-        self.pos[1] += min(self.speed, (display.get_height()/3-self.pos[1])/20)
+        self.pos[1] += min(self.speed, (display.get_height() / 3 - self.pos[1]) / 20)
         if self.laser_active:
             rect_l = pygame.Rect(0, self.pos[1] + (52 * self.image_scale),
                                  self.pos[0], 9 * self.image_scale)
@@ -487,14 +482,14 @@ class LaserEnemy(Enemy):
             pygame.draw.rect(display, (255, 0, 0), rect_l)
             pygame.draw.rect(display, (255, 0, 0), rect_r)
             if player.collides([rect_l, rect_r]):
-                player.deal_damage(player.plane.health+1)
-        if self.last_laser_active + self.laser_cooldown < time.time()*1000 and not self.laser_active and display.get_rect().colliderect(
-                pygame.Rect(self.hitbox[0].x+self.pos[0], self.hitbox[0].y+self.pos[1],
+                player.deal_damage(player.plane.health + 1)
+        if self.last_laser_active + self.laser_cooldown < time.time() * 1000 and not self.laser_active and display.get_rect().colliderect(
+                pygame.Rect(self.hitbox[0].x + self.pos[0], self.hitbox[0].y + self.pos[1],
                             self.hitbox[0].w, self.hitbox[0].h)):
-            self.last_shoot = time.time()*1000
+            self.last_shoot = time.time() * 1000
             self.laser_active = True
-        if self.laser_active and self.last_shoot+self.laser_duration < time.time()*1000:
-            self.last_laser_active = time.time()*1000
+        if self.laser_active and self.last_shoot + self.laser_duration < time.time() * 1000:
+            self.last_laser_active = time.time() * 1000
             self.laser_active = False
 
 
@@ -608,8 +603,9 @@ class NuclearBomb(Enemy):
         super().draw()
 
 
-class Level():
+class Level:
     def __init__(self, enemies, level_number: int, level_difficulty: int) -> None:
+        difficulty_int = level_difficulty
         if level_difficulty == 1:
             level_difficulty = "EASY"
         elif level_difficulty == 2:
@@ -618,7 +614,7 @@ class Level():
             level_difficulty = "HARD"
         else:
             level_difficulty = "UNKNOWN"
-        self.name = "LEVEL "+str(level_number)+" - "+level_difficulty.upper()
+        self.name = "LEVEL " + str(level_number) + " - " + level_difficulty.upper()
         self.number = level_number
         self.difficulty = level_difficulty
         self.enemies = enemies
@@ -626,6 +622,22 @@ class Level():
         self.finished_cooldown = 5000
         self.finished_timestamp = -1
         self.coins = []
+        self.rewarded_gems = difficulty_int
+        self.rewarded_coins = self.get_coins_from_level(level_number, difficulty_int)
+
+    @staticmethod
+    def get_coins_from_level(num, multiplier=1):
+        output_num = int(num * (30 + multiplier * 15) + 500)
+        if output_num > 3500:
+            output_num = int(3500 + (output_num - 3500) * 0.2)
+        return output_num
+
+    def give_rewards(self):
+        user_stats.add_coins(self.rewarded_coins)
+        user_stats.add_gems(self.rewarded_gems)
+
+    def get_rewards(self):
+        return self.rewarded_coins, self.rewarded_gems
 
 
 mouse = Mouse()

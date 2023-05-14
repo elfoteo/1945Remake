@@ -38,7 +38,7 @@ def pause():
         if clicked_resume:
             surf = big_font.render(str(unpause_timer), True, (255, 255, 255))
             display.blit(surf, (
-            display.get_width() / 2 - surf.get_width() / 2, display.get_height() / 2 - surf.get_height() / 2))
+                display.get_width() / 2 - surf.get_width() / 2, display.get_height() / 2 - surf.get_height() / 2))
             if last_time + 1 < time.time():
                 unpause_timer -= 1
                 last_time = time.time()
@@ -60,7 +60,7 @@ def pause():
         clock.tick(120)
 
 
-def win_screen(level_name="Level 31 - EASY"):
+def win_screen(level):
     mouse.unlock()
     head_movement_mult = 2
 
@@ -79,6 +79,7 @@ def win_screen(level_name="Level 31 - EASY"):
     normal_font = pygame.font.SysFont("", 30)
     pass_lvl = Button(screen.get_width() / 2 - pass_lvl_button.get_width() / 2, 730, pass_lvl_button.get_width(),
                       pass_lvl_button.get_height(), pass_lvl_button)
+    rewards = level.get_rewards()
     while True:
         display.blit(ui_background, (0, 0))
 
@@ -134,7 +135,7 @@ def win_screen(level_name="Level 31 - EASY"):
                           120 + win_label.get_height() - win_star.get_height() / 2 + win_star_circle.get_height() / 2 - 12)))
 
         display.blit(level_banner, (display.get_width() / 2 - level_banner.get_width() / 2, 270))
-        surf = normal_font.render(level_name, True, (255, 255, 255))
+        surf = normal_font.render(level.name, True, (255, 255, 255))
         display.blit(surf, (
             display.get_width() / 2 - surf.get_width() / 2,
             270 + level_banner.get_height() / 2 - surf.get_height() / 2))
@@ -146,13 +147,24 @@ def win_screen(level_name="Level 31 - EASY"):
                       550 + level_banner.get_height() / 2 - surf.get_height() / 2))
 
         display.blit(level_rewards_bg, (display.get_width() / 2 - level_rewards_bg.get_width() / 2, 600))
-
+        level_rewards_rect = level_rewards_bg.get_rect()
+        display.blit(pile_of_coins, (display.get_width() / 2 - 100,
+                                     600 + level_rewards_rect.h / 2 - pile_of_coins.get_height()))
+        surf = font_medium_small.render(str(rewards[0]), True, (255, 255, 255))
+        display.blit(surf,
+                     (display.get_width() / 2 - 100 + pile_of_coins.get_width()/2-surf.get_width()/2, 600 + level_rewards_rect.h / 2 - pile_of_coins.get_height()+50))
+        display.blit(pile_of_gems, (display.get_width() / 2 + 100-pile_of_gems.get_width(),
+                                    600 + level_rewards_rect.h / 2 - pile_of_gems.get_height()))
+        surf = font_medium_small.render(str(rewards[1]), True, (255, 255, 255))
+        display.blit(surf,
+                     (display.get_width() / 2 + 100 - pile_of_gems.get_width()/2-surf.get_width()/2, 600 + level_rewards_rect.h / 2 - pile_of_coins.get_height()+50))
         pass_lvl.draw(display)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit_game()
             if pass_lvl.handle_event(event):
+                level.give_rewards()
                 return
         mouse.draw()
         shader.draw(display)
@@ -208,7 +220,7 @@ def play_level(level):
 
         if player.abs_pos[1] <= -5500 and level.finished:  # TODO: better wait time before win, 2s timer
             player.auto_controlled = False
-            win_screen(level_name=level.name)
+            win_screen(level)
             user_stats.data["coins"] += user_stats.data["ingame_coins"]
             user_stats.data["ingame_coins"] = 0
             return
