@@ -36,7 +36,9 @@ enemy_laser_img = load_image("sprites/enemies/enemy_laser.png")
 following_enemy_img = load_image("sprites/enemies/following_enemy.png")
 bullet_bomb_frames = load_animation_frames("sprites/bombs/bullet_bomb")
 nuclear_bomb_frames = load_animation_frames("sprites/bombs/nuclear_bomb")
-death_frames = load_animation_frames("sprites/vfx/explosion")
+death_frames = [load_animation_frames("sprites/vfx/explosion_1"), load_animation_frames("sprites/vfx/explosion_2"),
+                load_animation_frames("sprites/vfx/explosion_3"), load_animation_frames("sprites/vfx/explosion_4"),
+                load_animation_frames("sprites/vfx/explosion_5")]
 coin1_frames = load_animation_frames("sprites/coins/1")
 coin5_frames = load_animation_frames("sprites/coins/5")
 ingame_coins_img = load_image("sprites/ui/ingame/ingame_coin.png", 0.8)
@@ -308,8 +310,13 @@ class Enemy:
     def on_death(self):
         coins.append(Coin(1, [self.pos[0] + self.image.get_width() / 2, self.pos[1] + self.image.get_height() / 2]))
         if self.particles_on_death:
+            for _ in range(2):
+                visual_effects.append(
+                    VFX(random.choice(death_frames), self.pos[0] + self.image.get_width() / 4, self.pos[1] + self.image.get_height() + 5,
+                        delay=10))
             visual_effects.append(
-                VFX(death_frames, self.pos[0] + self.image.get_width() / 4, self.pos[1] + self.image.get_height() + 5,
+                VFX(death_frames[0], self.pos[0] + self.image.get_width() / 4,
+                    self.pos[1] + self.image.get_height() + 5,
                     delay=10))
 
     def draw(self):
@@ -585,7 +592,7 @@ class NuclearBomb(Enemy):
             player.deal_damage(distance_between_points(player.pos, self.pos) * -1 + 385)
 
         anim = []
-        for i in death_frames:
+        for i in death_frames[0]:
             anim.append(pygame.transform.scale_by(i, 2.5))
         visual_effects.append(
             VFX(anim, self.pos[0] + self.image.get_width() / 4, self.pos[1] + self.image.get_height() + 5,

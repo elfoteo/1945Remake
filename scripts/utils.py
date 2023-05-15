@@ -31,7 +31,7 @@ def angle_between_points(pos1, pos2):
     return math.degrees(angle)
 
 
-def load_animation_frames(directory, scale=None):
+def load_animation_frames(directory, scale=None, rotation=0):
     frames = []
     filenames = sorted(os.listdir(directory),
                        key=lambda x: int(os.path.splitext(x)[0]) if x[0].isdigit() else float('inf'))
@@ -42,6 +42,7 @@ def load_animation_frames(directory, scale=None):
             frame = pygame.image.load(filepath)
             if scale is not None:
                 frame = pygame.transform.scale_by(frame, scale)
+            frame = pygame.transform.rotate(frame, rotation)
             frames.append(frame)
     return frames
 

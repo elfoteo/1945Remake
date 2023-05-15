@@ -43,7 +43,8 @@ class Projectiles:
                                     gun[0] + x,
                                     gun[1] + y,
                                     anchor=self.anchor,
-                                    offset=gun))
+                                    offset=gun,
+                                    no_rotation=True))
             self.last_shoot = time.time() * 1000
 
     def draw(self, screen, enemies):
@@ -111,7 +112,7 @@ class DelanneProjectiles(Projectiles):
                                         gun[0] + x,
                                         gun[1] + y,
                                         anchor=self.anchor,
-                                        offset=gun))
+                                        offset=gun, no_rotation=True))
                 elif gun_index == 0:
                     self.projectiles.append([x + gun[0], y + gun[1], angle_to_motion(gun[2], self.projectile_speed),
                                              pygame.transform.rotate(self.left_image, -gun[2] - 270)])
@@ -120,7 +121,7 @@ class DelanneProjectiles(Projectiles):
                                         gun[0] + x,
                                         gun[1] + y,
                                         anchor=self.anchor,
-                                        offset=gun))    
+                                        offset=gun, no_rotation=True))
                 elif gun_index == 2:
                     self.projectiles.append([x + gun[0], y + gun[1], angle_to_motion(gun[2], self.projectile_speed),
                                              pygame.transform.rotate(self.right_image, -gun[2] - 270)])
@@ -128,7 +129,7 @@ class DelanneProjectiles(Projectiles):
                                         gun[0] + x,
                                         gun[1] + y,
                                         anchor=self.anchor,
-                                        offset=gun))
+                                        offset=gun, no_rotation=True))
                 gun_index += 1
             self.last_shoot = time.time() * 1000
 
@@ -183,7 +184,7 @@ class TrailProjectiles(Projectiles):
                                     gun[0] + x,
                                     gun[1] + y,
                                     anchor=self.anchor,
-                                    offset=gun))
+                                    offset=gun, no_rotation=True))
                 gun_index += 1
             self.last_shoot = time.time() * 1000
 
@@ -220,7 +221,7 @@ class TrailProjectiles(Projectiles):
                                                 self.guns[projectile[6]][0],
                                                 self.guns[projectile[6]][1],
                                                 anchor=self.anchor,
-                                                offset=self.guns[projectile[6]]))
+                                                offset=self.guns[projectile[6]], no_rotation=True))
 
                     if trail[2]:
                         for enemy in enemies:
@@ -296,7 +297,7 @@ class BlackWidowProjectiles(Projectiles):
                                         abs_pos[0] + projectile[7][0],
                                         abs_pos[1] + projectile[7][1],
                                         anchor=self.anchor,
-                                        offset=projectile[7]))
+                                        offset=projectile[7], no_rotation=True))
                     projectile[0] = abs_pos[0] + projectile[7][0]
                     projectile[1] = abs_pos[1] + projectile[7][1]
                     projectile[7][2] = abs_pos[0]

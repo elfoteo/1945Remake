@@ -7,7 +7,7 @@ from scripts.label import Label
 from scripts.planes import all_planes
 
 cy = -300
-for i in range(0):  # 120
+for i in range(120):  # 120
     cy -= random.randint(50, 250)
     a = random.randint(0, 5)
     if a == 0:

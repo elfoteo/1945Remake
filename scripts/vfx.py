@@ -1,9 +1,18 @@
+import random
 import time
+
+import pygame.transform
 
 
 class VFX:
-    def __init__(self, frames, x, y, delay=40, anchor=None, offset=(0, 0)):
-        self.frames = frames
+    def __init__(self, frames, x, y, delay=40, anchor=None, offset=(0, 0), no_rotation=False):
+        if not no_rotation:
+            self.frames = []
+            rotation = random.randint(0, 360)
+            for frame in frames:
+                self.frames.append(pygame.transform.rotate(frame, rotation))
+        else:
+            self.frames = frames
         self.ended = False
         self.index = 0
         self.delay = delay
