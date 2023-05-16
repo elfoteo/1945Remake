@@ -2,29 +2,31 @@ import random
 import pygame.font
 
 from scripts.game import *
-from scripts.button import *
 from scripts.label import Label
 from scripts.planes import all_planes
 
 cy = -300
-for i in range(120):  # 120
+for i in range(0):
     cy -= random.randint(50, 250)
     a = random.randint(0, 5)
     if a == 0:
-        enemies.append(NormalEnemy([
-            random.randint(enemy_normal_img.get_width(), display.get_width() - enemy_normal_img.get_width()), cy]))
+        enemies.append(RotatingEnemy([
+            random.randint(enemy_normal_frames[0].get_width(), display.get_width() - enemy_normal_frames[0].get_width()), cy]))
     elif a == 1:
-        enemies.append(NormalEnemy2([
-            random.randint(enemy_normal_img.get_width(), display.get_width() - enemy_normal_img.get_width()), cy]))
+        enemies.append(RotatingEnemy([
+            random.randint(enemy_normal_frames[0].get_width(), display.get_width() - enemy_normal_frames[0].get_width()), cy]))
     elif a == 2:
-        enemies.append(EnemyShooter6Dir([
-            random.randint(enemy_normal_img.get_width(), display.get_width() - enemy_normal_img.get_width()), cy]))
+        enemies.append(NuclearBomb([
+            random.randint(enemy_normal_frames[0].get_width(), display.get_width() - enemy_normal_frames[0].get_width()), cy]))
     elif a == 3:
-        enemies.append(BulletBomb([
-            random.randint(enemy_normal_img.get_width(), display.get_width() - enemy_normal_img.get_width()), cy]))
+        enemies.append(EnemyShooter6Dir([
+            random.randint(enemy_normal_frames[0].get_width(), display.get_width() - enemy_normal_frames[0].get_width()), cy]))
     elif a == 5:
         enemies.append(BulletBomb([
-            random.randint(enemy_normal_img.get_width(), display.get_width() - enemy_normal_img.get_width()), cy]))
+            random.randint(enemy_normal_frames[0].get_width(), display.get_width() - enemy_normal_frames[0].get_width()), cy]))
+
+patterns.init(display)
+enemies.extend(patterns.get_nuclear_right(-10, NormalEnemy2, BulletBomb, enemy_normal2_frames[0], bullet_bomb_frames[0]))
 
 mouse.unlock()
 singleplayer_button = Button(display.get_width() / 2 - (148 * 1.5) / 2, 700, 148 * 1.5, 37 * 1.5,
@@ -36,7 +38,7 @@ dogtags_label = Label(user_stats.data["dogtags"], dogtag_icon, (0, 0), font_smal
 coins_label = Label(user_stats.data["coins"], coin_icon, (dogtags_label.get_width(), 0), font_small)
 gems_label = Label(user_stats.data["gems"], gem_icon, (coins_label.get_width() + dogtags_label.get_width(), 0), font_small)
 
-level1 = Level(enemies, 1, 1)
+level1 = Level(enemies, 1, 1, "sprites/background/desert.png")
 
 dogtags_plus_rect = pygame.Rect(93 * 1.25, 3 * 1.25, 22 * 1.25, 21 * 1.25)
 
@@ -47,7 +49,6 @@ dogtags_bg_pos = (
     display.get_width() / 2 - buy_dogtags.get_width() / 2, display.get_height() / 2 - buy_dogtags.get_height() / 2)
 dogtags_bg_rect = pygame.Rect(dogtags_bg_pos[0], dogtags_bg_pos[1],
                               buy_dogtags.get_width(), buy_dogtags.get_height())
-gui_title_font = pygame.font.Font("font/font.ttf", 28)
 purchase_30_dogtags = Button(225, 475, gem_purchase.get_width(), gem_purchase.get_height(), gem_purchase, "10  ",
                              font="font/font.ttf", increase_font_size=0.15)
 purchase_100_dogtags = Button(225, 550, gem_purchase.get_width(), gem_purchase.get_height(), gem_purchase, "30  ",
@@ -92,6 +93,7 @@ was_mouse_button_down = False
 mouse_button_up_event = False
 # Drawing all main-menu GUIs it may seem complex but is really easy,
 # the difficult part is to position all the elements right
+
 while True:
     plane_surf = pygame.Surface(current_plane.image.get_size(), pygame.SRCALPHA)
     user_stats.update_dogtags()

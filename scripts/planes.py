@@ -315,7 +315,7 @@ class F_86_Sabre(Plane):
         if self.wait_time >= self.max_wait_time:
             for engine in self.engines:
                 self.vfx.append(VFX(flame_anim_frames, engine[0], engine[1], delay=self.flame_delay,
-                                    anchor=(self.get_x, self.get_y), offset=(engine[0], engine[1])))
+                                    anchor=(self.get_x, self.get_y), offset=(engine[0], engine[1]), no_rotation=True))
             self.wait_time = 0
 
 

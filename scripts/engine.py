@@ -6,6 +6,8 @@ from scripts.utils import *
 from scripts.utils import _quit
 from scripts.vfx import VFX
 from scripts.shader import Shader, ShaderDisplay
+from scripts.button import *
+import scripts.patterns as patterns
 
 # init pygame and custom modules
 pygame.init()
@@ -27,9 +29,9 @@ if DEBUG:
 planes.init()  # initialize the plane module adding all planes to the "all_planes" list
 # load all images
 healthbar_img = load_image("sprites/ui/ingame/healthbar.png", 0.6)
-enemy_normal_img = load_image("sprites/enemies/enemy_normal.png", 0.6)
 enemy_projectile_img = load_image("sprites/bombs/bullet_bomb/projectile.png")
 enemy_normal2_frames = load_animation_frames("sprites/enemies/enemy_normal2")
+enemy_normal_frames = load_animation_frames("sprites/enemies/enemy_normal")
 rotating_enemy_frames = load_animation_frames("sprites/enemies/rotating_enemy")
 enemy_shooter_6dir_img = load_image("sprites/enemies/enemy_shooter_6dir.png")
 enemy_laser_img = load_image("sprites/enemies/enemy_laser.png")
@@ -37,8 +39,7 @@ following_enemy_img = load_image("sprites/enemies/following_enemy.png")
 bullet_bomb_frames = load_animation_frames("sprites/bombs/bullet_bomb")
 nuclear_bomb_frames = load_animation_frames("sprites/bombs/nuclear_bomb")
 death_frames = [load_animation_frames("sprites/vfx/explosion_1"), load_animation_frames("sprites/vfx/explosion_2"),
-                load_animation_frames("sprites/vfx/explosion_3"), load_animation_frames("sprites/vfx/explosion_4"),
-                load_animation_frames("sprites/vfx/explosion_5")]
+                load_animation_frames("sprites/vfx/explosion_3"), load_animation_frames("sprites/vfx/explosion_4")]
 coin1_frames = load_animation_frames("sprites/coins/1")
 coin5_frames = load_animation_frames("sprites/coins/5")
 ingame_coins_img = load_image("sprites/ui/ingame/ingame_coin.png", 0.8)
@@ -61,15 +62,19 @@ level_banner = load_image("sprites/ui/level/level_banner.png", 1.2)
 pass_lvl_button = load_image("sprites/ui/level/pass_lvl_button.png", 1)
 level_rewards_bg = load_image("sprites/ui/level/rewards_bg.png", 1)
 
+level_defeated = load_image("sprites/ui/level/defeated.png", 1.2)
+
 ui_background = load_image("sprites/ui/ui_background.png", display.get_size(), no_scale_by=True, alpha=False)
 
 coin_icon = load_image("sprites/ui/coin.png", 1)
 gem_icon = load_image("sprites/ui/gem.png", 1)
 dogtag_icon = load_image("sprites/ui/dogtag.png", 1)
 buy_dogtags = load_image("sprites/ui/buy_dogtags.png", 0.9)
+popup_bg = load_image("sprites/ui/buy_dogtags.png", 0.9)
 dogtags_pile = load_image("sprites/ui/dogtags_pile.png", 1)
 single_dogtag = load_image("sprites/ui/single_dogtag.png", 1)
 text_label = load_image("sprites/ui/text_label.png", 1.25)
+popup_title_label = load_image("sprites/ui/text_label.png", 1)
 gem_purchase = load_image("sprites/ui/gem_purchase.png", 1.35)
 gui_close = load_image("sprites/ui/gui_close.png", 1.1)
 gui_close_hover = load_image("sprites/ui/gui_close_hover.png", 1.1)
@@ -89,11 +94,13 @@ pile_of_coins = load_image('sprites/ui/level/pile_of_coins.png', 1)
 pile_of_gems = load_image('sprites/ui/level/pile_of_gems.png', 1)
 visual_effects = []
 user_stats = Stats()
-scroll_speed = 1
+scroll_speed = 0.35
 coins = []
 
 font_small = pygame.font.Font("font/font.ttf", 16)
 font_medium_small = pygame.font.Font("font/font.ttf", 20)
+font_medium = pygame.font.Font("font/font.ttf", 24)
+gui_title_font = pygame.font.Font("font/font.ttf", 28)
 font = pygame.font.Font("font/font.ttf", 30)
 big_font = pygame.font.Font("font/font.ttf", 58)
 
@@ -172,8 +179,9 @@ class Player:
                            21 / 2 * 1.2 - 1)
         rect.normalize()
         pygame.draw.rect(display, (120, 120, 120), rect)
-        if self.plane.health <= 0:
+        if self.plane.health <= 0 and self.plane.alive:
             self.plane.alive = False
+            visual_effects.append(VFX(death_frames[0], self.abs_pos[0], self.abs_pos[1], delay=10))
 
     def collides(self, hitboxes):
         for hitbox in hitboxes:
@@ -220,10 +228,10 @@ class Player:
                 (self.pos[0], self.pos[1] + my))) or self.auto_controlled:
             self.pos[1] += my
         self.abs_pos = (self.pos[0] - self.plane.image.get_width() / 2, self.pos[1] - self.plane.image.get_height() / 2)
-        self.plane.update(self.average_motion_x, display, enemies, self.abs_pos, is_dummy=self.is_dummy)
-
-        display.blit(self.plane.image,
-                     (self.pos[0] - self.plane.image.get_width() / 2, self.pos[1] - self.plane.image.get_height() / 2))
+        if self.plane.alive:
+            self.plane.update(self.average_motion_x, display, enemies, self.abs_pos, is_dummy=self.is_dummy)
+            display.blit(self.plane.image,
+                        (self.pos[0] - self.plane.image.get_width() / 2, self.pos[1] - self.plane.image.get_height() / 2))
         if DEBUG:
             for box in self.plane.hitbox:
                 pygame.draw.rect(display, (255, 0, 0), (self.abs_pos[0] + box.x, self.abs_pos[1] + box.y, box.w, box.h))
@@ -255,7 +263,7 @@ class Coin:
         self.abs_pos = (self.pos[0] + self.frames[self.index].get_width() / 2,
                         self.pos[1] + self.frames[self.index].get_height() / 2)
         if self.alive:
-            self.pos[1] += scroll_speed
+            self.pos[1] += scroll_speed+0.1
             if self.last_frame + self.delay < time.time() * 1000:
                 if self.index + 1 >= len(self.frames):
                     self.index = 0
@@ -275,6 +283,49 @@ class Coin:
                 user_stats.add_ingame_coins(self.value)
                 self.alive = False
 
+class Popup:
+    def __init__(self, title, option1, option2, description) -> None:
+        self.title = title
+        self.option_1 = Button(display.get_width() / 2-148/2, display.get_height() / 2+50, 148,
+                           40,
+                           'sprites/ui/green_button.png',
+                           text=option1,
+                           font="font/font.ttf", increase_font_size=0.15)
+        self.option_2 = Button(display.get_width() / 2 - 148/2, display.get_height() / 2 + 100, 148,
+                         40,
+                         'sprites/ui/yellow_button.png',
+                         text=option2,
+                         font="font/font.ttf", increase_font_size=0.15)
+        self.description = description
+
+    def get_result(self, display_copy):
+        transparent_overlay = transparent_rect(display.get_size(), 0.65)
+        popup_title = font_medium.render(self.title, False, (255, 255, 255))
+
+        popup_description = font_medium_small.render(self.description, False, (255, 255, 255))
+        while True:
+            display.blit(display_copy, (0, 0))
+            display.blit(transparent_overlay, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+            display.blit(popup_bg, (display.get_width()/2-popup_bg.get_width()/2, display.get_height()/2-popup_bg.get_height()/2))
+            display.blit(popup_title_label, (display.get_width() / 2 - popup_title_label.get_width() / 2,
+                                             display.get_height()/2-popup_bg.get_height()/2))
+            display.blit(popup_title, (display.get_width() / 2 - popup_title.get_width() / 2, display.get_height()/2-popup_bg.get_height()/2+5))
+            display.blit(popup_description, (display.get_width() / 2 - popup_description.get_width() / 2, display.get_height()/2-75))
+            self.option_1.draw(display)
+            self.option_2.draw(display)
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    quit_game()
+
+                if self.option_1.handle_event(event):
+                    return 1
+                elif self.option_2.handle_event(event):
+                    return 2
+
+            mouse.draw()
+            shader.draw(display)
+            clock.tick(120)
 
 class Enemy:
     def __init__(self, speed, health, enemy_projectiles, image, pos, hitbox, auto_shoot=True,
@@ -347,13 +398,24 @@ class Enemy:
 class NormalEnemy(Enemy):
     def __init__(self, pos):
         enemy_projectiles = EnemyProjectiles([], 0, display, 99999)
-        image = enemy_normal_img
-        health = 75
+        image = enemy_normal_frames[0]
+        health = 35
         speed = 1
+        self.frame_delay = 120
+        self.next_frame = time.time() * 1000
+        self.frame_index = 0
         hitbox = [pygame.Rect((round(47 * 0.6), round(3 * 0.6), round(16 * 0.6), round(87 * 0.6))),
                   pygame.Rect((round(0 * 0.6), round(44 * 0.6), round(110 * 0.6), round(22 * 0.6)))]
         super().__init__(speed, health, enemy_projectiles, image, pos, hitbox)
-
+    
+    def draw(self):
+        if self.next_frame + self.frame_delay <= time.time() * 1000:
+            self.next_frame = time.time() * 1000
+            self.frame_index += 1
+            if self.frame_index >= 2:
+                self.frame_index = 0
+            self.image = enemy_normal_frames[self.frame_index]
+        super().draw()
 
 class NormalEnemy2(Enemy):
     def __init__(self, pos):
@@ -361,11 +423,11 @@ class NormalEnemy2(Enemy):
         image = enemy_normal2_frames[0]
         health = 35
         speed = 1
-        self.frame_delay = 120
+        self.frame_delay = 110
         self.next_frame = time.time() * 1000
         self.frame_index = 0
-        hitbox = [pygame.Rect((round(31), round(00), round(110), round(560))),
-                  pygame.Rect((round(0), round(250), round(730), round(180)))]
+        hitbox = [pygame.Rect((round(47 * 0.6), round(3 * 0.6), round(16 * 0.6), round(87 * 0.6))),
+                  pygame.Rect((round(0 * 0.6), round(44 * 0.6), round(110 * 0.6), round(22 * 0.6)))]
         super().__init__(speed, health, enemy_projectiles, image, pos, hitbox)
 
     def draw(self):
@@ -611,7 +673,7 @@ class NuclearBomb(Enemy):
 
 
 class Level:
-    def __init__(self, enemies, level_number: int, level_difficulty: int) -> None:
+    def __init__(self, enemies, level_number: int, level_difficulty: int, bg: str) -> None:
         difficulty_int = level_difficulty
         if level_difficulty == 1:
             level_difficulty = "EASY"
@@ -631,6 +693,7 @@ class Level:
         self.coins = []
         self.rewarded_gems = difficulty_int
         self.rewarded_coins = self.get_coins_from_level(level_number, difficulty_int)
+        self.bg = load_image(bg)
 
     @staticmethod
     def get_coins_from_level(num, multiplier=1):

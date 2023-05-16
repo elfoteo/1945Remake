@@ -7,7 +7,7 @@ from scripts.button import Button
 from scripts.engine import *
 
 
-def pause():
+def pause(level):
     paused = True
     scr_copy = display.copy().convert_alpha()
     scr_copy.fill((255, 255, 255, 180), None, pygame.BLEND_RGBA_MULT)
@@ -26,6 +26,8 @@ def pause():
     unpause_timer = 3
     last_time = time.time()
     clicked_resume = False
+    exit_popup = Popup("EXIT MISSION", "Cancel", "Exit", "Your flight results will be lost")
+    screen_copy = display.copy()
     while paused:
         display.fill((0, 0, 0))
         if clicked_resume:
@@ -55,12 +57,18 @@ def pause():
                     last_time = time.time()
                 elif exit_button.handle_event(event):
                     mouse.unlock()
+                    if exit_popup.get_result(screen_copy) == 2:
+                        defeat_screen(level)
+                        return "quit"
                     # TODO: defeat screen
         shader.draw(display)
+        screen_copy = display.copy()
         clock.tick(120)
 
 
 def win_screen(level):
+    shader.red_overlay = 0
+    shader.shake_ammount = 0
     mouse.unlock()
     head_movement_mult = 2
 
@@ -134,30 +142,24 @@ def win_screen(level):
                       round(
                           120 + win_label.get_height() - win_star.get_height() / 2 + win_star_circle.get_height() / 2 - 12)))
 
-        display.blit(level_banner, (display.get_width() / 2 - level_banner.get_width() / 2, 270))
+        display.blit(level_banner, (display.get_width() / 2 - level_banner.get_width() / 2, 300))
         surf = normal_font.render(level.name, True, (255, 255, 255))
         display.blit(surf, (
             display.get_width() / 2 - surf.get_width() / 2,
-            270 + level_banner.get_height() / 2 - surf.get_height() / 2))
+            300 + level_banner.get_height() / 2 - surf.get_height() / 2))
 
-        display.blit(level_banner, (display.get_width() / 2 - level_banner.get_width() / 2, 550))
-        surf = normal_font.render("REWARDS", True, (255, 255, 255))
-        display.blit(surf,
-                     (display.get_width() / 2 - surf.get_width() / 2,
-                      550 + level_banner.get_height() / 2 - surf.get_height() / 2))
-
-        display.blit(level_rewards_bg, (display.get_width() / 2 - level_rewards_bg.get_width() / 2, 600))
+        display.blit(level_rewards_bg, (display.get_width() / 2 - level_rewards_bg.get_width() / 2, 375))
         level_rewards_rect = level_rewards_bg.get_rect()
         display.blit(pile_of_coins, (display.get_width() / 2 - 100,
-                                     600 + level_rewards_rect.h / 2 - pile_of_coins.get_height()))
-        surf = font_medium_small.render(str(rewards[0]), True, (255, 255, 255))
+                                     375 + level_rewards_rect.h / 2 - pile_of_coins.get_height()))
+        surf = font_medium_small.render(str(rewards[0]+user_stats.data["ingame_coins"]), True, (255, 255, 255))
         display.blit(surf,
-                     (display.get_width() / 2 - 100 + pile_of_coins.get_width()/2-surf.get_width()/2, 600 + level_rewards_rect.h / 2 - pile_of_coins.get_height()+50))
+                     (display.get_width() / 2 - 100 + pile_of_coins.get_width()/2-surf.get_width()/2, 375 + level_rewards_rect.h / 2 - pile_of_coins.get_height()+50))
         display.blit(pile_of_gems, (display.get_width() / 2 + 100-pile_of_gems.get_width(),
-                                    600 + level_rewards_rect.h / 2 - pile_of_gems.get_height()))
+                                    375 + level_rewards_rect.h / 2 - pile_of_gems.get_height()))
         surf = font_medium_small.render(str(rewards[1]), True, (255, 255, 255))
         display.blit(surf,
-                     (display.get_width() / 2 + 100 - pile_of_gems.get_width()/2-surf.get_width()/2, 600 + level_rewards_rect.h / 2 - pile_of_coins.get_height()+50))
+                     (display.get_width() / 2 + 100 - pile_of_gems.get_width()/2-surf.get_width()/2, 375 + level_rewards_rect.h / 2 - pile_of_coins.get_height()+50))
         pass_lvl.draw(display)
 
         for event in pygame.event.get():
@@ -165,6 +167,48 @@ def win_screen(level):
                 quit_game()
             if pass_lvl.handle_event(event):
                 level.give_rewards()
+                user_stats.add_coins(user_stats.data["ingame_coins"])
+                user_stats.data["ingame_coins"] = 0
+                return
+        mouse.draw()
+        shader.draw(display)
+        clock.tick(120)
+
+
+def defeat_screen(level):
+    shader.red_overlay = 0
+    shader.shake_ammount = 0
+    mouse.unlock()
+
+    normal_font = pygame.font.SysFont("", 30)
+    pass_lvl = Button(screen.get_width() / 2 - pass_lvl_button.get_width() / 2, 730, pass_lvl_button.get_width(),
+                      pass_lvl_button.get_height(), pass_lvl_button)
+    while True:
+        display.blit(ui_background, (0, 0))
+
+        display.blit(level_defeated, (display.get_width()/2-level_defeated.get_width()/2, 85))
+        
+        display.blit(level_banner, (display.get_width() / 2 - level_banner.get_width() / 2, 300))
+        surf = normal_font.render(level.name, True, (255, 255, 255))
+        display.blit(surf, (
+            display.get_width() / 2 - surf.get_width() / 2,
+            300 + level_banner.get_height() / 2 - surf.get_height() / 2))
+
+        display.blit(level_rewards_bg, (display.get_width() / 2 - level_rewards_bg.get_width() / 2, 375))
+        level_rewards_rect = level_rewards_bg.get_rect()
+        display.blit(pile_of_coins, (display.get_width() / 2 - pile_of_coins.get_width()/2,
+                                     375 + level_rewards_rect.h / 2 - pile_of_coins.get_height()))
+        surf = font_medium_small.render(str(user_stats.data["ingame_coins"]), True, (255, 255, 255))
+        display.blit(surf,
+                     (display.get_width() / 2 - surf.get_width()/2, 375 + level_rewards_rect.h / 2 - pile_of_coins.get_height()+50))
+        pass_lvl.draw(display)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                quit_game()
+            if pass_lvl.handle_event(event):
+                user_stats.add_coins(user_stats.data["ingame_coins"])
+                user_stats.data["ingame_coins"] = 0
                 return
         mouse.draw()
         shader.draw(display)
@@ -175,13 +219,27 @@ def play_level(level):
     mouse.lock()
     # TODO: change all to work with delta time
     # win_screen()
+
+    # a lot of timers
     end_anim_trigger = False
     end_anim = time.time()
     end_anim_cooldown = 2
     started_animation = False
     end_animation_y_counter = 0
+    scroll_y = -level.bg.get_height()+screen.get_height()
+    bg_copy = level.bg.copy()
+    before_end_timer = None
+    before_end_cooldown = 2
+    
+    
     while True:
-        display.fill((32, 56, 212))
+        # display.fill((32, 56, 212))
+        scroll_y += scroll_speed
+        display.blit(level.bg, (0, scroll_y))
+        display.blit(bg_copy, (0, scroll_y-bg_copy.get_height()))
+        if scroll_y >= level.bg.get_height():
+            scroll_y = 0
+
         for coin in coins:
             coin.draw()
             if not coin.alive:
@@ -217,8 +275,11 @@ def play_level(level):
                 y_movment
             ]
             player.is_dummy = True
+        
+        if -100 >= player.abs_pos[1] >= -120:
+            before_end_timer = time.time()
 
-        if player.abs_pos[1] <= -5500 and level.finished:  # TODO: better wait time before win, 2s timer
+        if before_end_timer is not None and before_end_timer+before_end_cooldown < time.time() and level.finished:  # TODO: better wait time before win, 2s timer
             player.auto_controlled = False
             win_screen(level)
             user_stats.data["coins"] += user_stats.data["ingame_coins"]
@@ -232,13 +293,22 @@ def play_level(level):
                 visual_effects.remove(vfx)
 
         player.draw_gui()  # draw the gui
+        if before_end_timer is None and not player.plane.alive:
+            before_end_timer = time.time()
+            player.auto_controlled = True
+            player.auto_rel = [0, 0]
+
+        if not player.plane.alive and before_end_timer is not None and before_end_timer + before_end_cooldown < time.time():
+            defeat_screen(level)
+            return
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit_game()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    pause()
+                    if pause(level) == "quit":
+                        return
 
         mouse.draw()
         shader.draw(display)

@@ -418,7 +418,7 @@ class RotatingEnemyProjectiles(EnemyProjectiles):
             [42, 35, -45],
             [33, 35, -135]
         ]
-        self.shoot_height = display.get_height()/2
+        self.shoot_height = display.get_height()/2-100
         super().__init__(guns, image, display)
         self.max_shoot_count = 5
         self.cooldown = 30
@@ -428,7 +428,7 @@ class RotatingEnemyProjectiles(EnemyProjectiles):
         if time.time() * 1000 > self.last_shoot + self.cooldown and\
                 y > self.shoot_height and self.shoot_count < self.max_shoot_count:
             for gun in self.guns:
-                self.projectiles.append([x + gun[0], y + gun[1], angle_to_motion(gun[2]+random.uniform(-7, 7), self.projectile_speed)])
+                self.projectiles.append([x + gun[0], y + gun[1], angle_to_motion(gun[2]+random.uniform(-10, 10), self.projectile_speed)])
             self.shoot_count += 1
             self.last_shoot = time.time() * 1000
 
