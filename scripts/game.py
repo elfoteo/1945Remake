@@ -1,9 +1,3 @@
-import math
-import sys
-
-import pygame
-
-from scripts.button import Button
 from scripts.engine import *
 
 
@@ -60,7 +54,6 @@ def pause(level):
                     if exit_popup.get_result(screen_copy) == 2:
                         defeat_screen(level)
                         return "quit"
-                    # TODO: defeat screen
         shader.draw(display)
         screen_copy = display.copy()
         clock.tick(120)
@@ -68,7 +61,7 @@ def pause(level):
 
 def win_screen(level):
     shader.red_overlay = 0
-    shader.shake_ammount = 0
+    shader.shake_amount = 0
     mouse.unlock()
     head_movement_mult = 2
 
@@ -177,7 +170,7 @@ def win_screen(level):
 
 def defeat_screen(level):
     shader.red_overlay = 0
-    shader.shake_ammount = 0
+    shader.shake_amount = 0
     mouse.unlock()
 
     normal_font = pygame.font.SysFont("", 30)
@@ -250,7 +243,6 @@ def play_level(level):
             enemy.draw()
             if not enemy.alive and enemy.projectiles.projectiles == []:
                 new_enemies.remove(enemy)
-                # TODO: Explosion
         level.enemies = new_enemies.copy()
         del new_enemies
         if level.enemies == [] and coins == [] and not level.finished and not end_anim_trigger:
@@ -279,7 +271,7 @@ def play_level(level):
         if -100 >= player.abs_pos[1] >= -120:
             before_end_timer = time.time()
 
-        if before_end_timer is not None and before_end_timer+before_end_cooldown < time.time() and level.finished:  # TODO: better wait time before win, 2s timer
+        if before_end_timer is not None and before_end_timer+before_end_cooldown < time.time() and level.finished:
             player.auto_controlled = False
             win_screen(level)
             user_stats.data["coins"] += user_stats.data["ingame_coins"]

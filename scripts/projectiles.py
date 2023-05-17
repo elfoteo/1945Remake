@@ -4,13 +4,26 @@ import time
 
 import pygame
 
-from scripts.utils import angle_to_motion, angle_between_points, load_animation_frames
+from scripts.utils import *
 from scripts.vfx import VFX
+from scripts.shader import Shader
 
 vfx_shoot_scale = 0.2
 vfx_hit_scale = 0.1
-shoot_frames = load_animation_frames("sprites/vfx/shoot", vfx_shoot_scale)
-hit_frames = load_animation_frames("sprites/vfx/hit", vfx_hit_scale)
+shoot_frames = None
+hit_frames = None
+normal_enemy_projectile = None
+bullet_bomb_projectile = None
+shader: Shader = None
+
+
+def init(shader_):
+    global shoot_frames, hit_frames, normal_enemy_projectile, bullet_bomb_projectile, shader
+    shader = shader_
+    shoot_frames = load_animation_frames("sprites/vfx/shoot", vfx_shoot_scale)
+    hit_frames = load_animation_frames("sprites/vfx/hit", vfx_hit_scale)
+    normal_enemy_projectile = load_image("sprites/enemies/enemy_projectile.png")
+    bullet_bomb_projectile = load_image("sprites/bombs/bullet_bomb/projectile.png")
 
 
 class Projectiles:
@@ -22,7 +35,7 @@ class Projectiles:
             self.use_vfx = True
         self.projectiles = []
         self.cooldown = cooldown
-        self.last_shoot = time.time() * 1000
+        self.last_shoot = shader.get_time()
         self.guns = guns
         self.projectile_speed = speed
         self.dmg = dmg
@@ -35,7 +48,7 @@ class Projectiles:
         self.anchor = anchor
 
     def shoot(self, x, y):
-        if time.time() * 1000 > self.last_shoot + self.cooldown:
+        if shader.get_time() > self.last_shoot + self.cooldown:
             for gun in self.guns:
                 self.projectiles.append([x + gun[0], y + gun[1], angle_to_motion(gun[2], self.projectile_speed),
                                          pygame.transform.rotate(self.image, -gun[2] - 270)])
@@ -45,7 +58,7 @@ class Projectiles:
                                     anchor=self.anchor,
                                     offset=gun,
                                     no_rotation=True))
-            self.last_shoot = time.time() * 1000
+            self.last_shoot = shader.get_time()
 
     def draw(self, screen, enemies):
         new_proj = self.projectiles.copy()
@@ -87,7 +100,7 @@ class DelanneProjectiles(Projectiles):
             self.use_vfx = True
         self.projectiles = []
         self.cooldown = cooldown
-        self.last_shoot = time.time() * 1000
+        self.last_shoot = shader.get_time()
         self.guns = guns
         self.projectile_speed = speed
         self.dmg = dmg
@@ -101,8 +114,8 @@ class DelanneProjectiles(Projectiles):
         self.hit_frames = hit_frames
 
     def shoot(self, x, y):
-        
-        if time.time() * 1000 > self.last_shoot + self.cooldown:
+
+        if shader.get_time() > self.last_shoot + self.cooldown:
             gun_index = 0
             for gun in self.guns:
                 if gun_index == 1:
@@ -116,7 +129,7 @@ class DelanneProjectiles(Projectiles):
                 elif gun_index == 0:
                     self.projectiles.append([x + gun[0], y + gun[1], angle_to_motion(gun[2], self.projectile_speed),
                                              pygame.transform.rotate(self.left_image, -gun[2] - 270)])
-                    
+
                     self.vfx.append(VFX(self.shoot_frames,
                                         gun[0] + x,
                                         gun[1] + y,
@@ -131,7 +144,7 @@ class DelanneProjectiles(Projectiles):
                                         anchor=self.anchor,
                                         offset=gun, no_rotation=True))
                 gun_index += 1
-            self.last_shoot = time.time() * 1000
+            self.last_shoot = shader.get_time()
 
     def draw(self, screen, enemies):
         new_proj = self.projectiles.copy()
@@ -171,12 +184,12 @@ class TrailProjectiles(Projectiles):
         self.delay = 20
 
     def shoot(self, x, y):
-        if time.time() * 1000 > self.last_shoot + self.cooldown:
+        if shader.get_time() > self.last_shoot + self.cooldown:
             gun_index = 0
             for gun in self.guns:
                 trail_data = []
                 for i in range(self.trail_length):
-                    trail_data.append([time.time() * 1000 + i * self.delay, i + 1, False])
+                    trail_data.append([shader.get_time() + i * self.delay, i + 1, False])
                 self.projectiles.append([x + gun[0], y + gun[1], angle_to_motion(gun[2], self.projectile_speed),
                                          pygame.transform.rotate(self.image, -gun[2] - 270),
                                          trail_data, False, gun_index, (x, y)])
@@ -186,7 +199,7 @@ class TrailProjectiles(Projectiles):
                                     anchor=self.anchor,
                                     offset=gun, no_rotation=True))
                 gun_index += 1
-            self.last_shoot = time.time() * 1000
+            self.last_shoot = shader.get_time()
 
     def draw(self, screen, enemies):
         new_proj = self.projectiles.copy()
@@ -209,7 +222,7 @@ class TrailProjectiles(Projectiles):
             alpha = 255
             for trail in projectile[4]:
                 offset_y = (self.trail_img.get_height() + 2) * trail[1]
-                if trail[0] < time.time() * 1000:
+                if trail[0] < shader.get_time():
                     tmp_img = self.trail_img.copy()
                     tmp_img.fill((255, 255, 255, alpha), None, pygame.BLEND_RGBA_MULT)
                     screen.blit(tmp_img, (projectile[0] - tmp_img.get_width() / 2,
@@ -270,7 +283,7 @@ class BlackWidowProjectiles(Projectiles):
         super().__init__(guns, image, speed, cooldown, dmg, vfx, anchor)
 
     def shoot(self, x, y):
-        if time.time() * 1000 > self.last_shoot + self.cooldown:
+        if shader.get_time() > self.last_shoot + self.cooldown:
             for gun in self.guns:
                 c = 0
                 for i in range(3):
@@ -279,18 +292,18 @@ class BlackWidowProjectiles(Projectiles):
                                              angle_to_motion(gun[2], self.projectile_speed),
                                              pygame.transform.rotate(self.image, -gun[2] - 270),
                                              c,
-                                             time.time() * 1000,
+                                             shader.get_time(),
                                              False,
                                              [gun[0], gun[1], x, y],
                                              False if gun[0] > 99 * self.image_scale else True,
                                              0])
                     c += 250
-            self.last_shoot = time.time() * 1000
+            self.last_shoot = shader.get_time()
 
     def draw(self, screen, enemies, abs_pos=any):
         new_proj = self.projectiles.copy()
         for projectile in self.projectiles:
-            if time.time() * 1000 > projectile[5] + projectile[4]:
+            if shader.get_time() > projectile[5] + projectile[4]:
                 removed = False
                 if not projectile[6]:
                     self.vfx.append(VFX(self.shoot_frames,
@@ -343,7 +356,7 @@ class EnemyProjectiles:
         self.projectiles = []
         self.projectile_hitbox = [2, 4, 4, 8]
         self.cooldown = cooldown
-        self.last_shoot = time.time() * 1000
+        self.last_shoot = shader.get_time()
         self.guns = guns
         self.projectile_speed = speed
         self.dmg = dmg
@@ -356,10 +369,10 @@ class EnemyProjectiles:
         )
 
     def shoot(self, x, y):
-        if time.time() * 1000 > self.last_shoot + self.cooldown:
+        if shader.get_time() > self.last_shoot + self.cooldown:
             for gun in self.guns:
                 self.projectiles.append([x + gun[0], y + gun[1], angle_to_motion(gun[2], self.projectile_speed)])
-            self.last_shoot = time.time() * 1000
+            self.last_shoot = shader.get_time()
 
     def draw(self, screen: pygame.Surface, player):
         new_proj = self.projectiles.copy()
@@ -385,7 +398,6 @@ class EnemyProjectiles:
                             (projectile[0] - self.projectile_hitbox[0], projectile[1] - self.projectile_hitbox[1],
                              self.projectile_hitbox[2], self.projectile_hitbox[3])) \
                             .colliderect((player.abs_pos[0] + p_box.x, player.abs_pos[1] + p_box.y, p_box.w, p_box.h)):
-                        # TODO: Explosion
                         player.deal_damage(self.dmg)
                         try:
                             new_proj.remove(projectile)
@@ -397,47 +409,42 @@ class EnemyProjectiles:
 
 class Enemy6DirProjectiles(EnemyProjectiles):
     def __init__(self, screen):
-        # TODO: fix all image loadings
-        image = pygame.image.load("sprites/enemies/enemy_projectile.png")
-        super().__init__([], image, screen)
+        super().__init__([], normal_enemy_projectile, screen)
         self.cooldown = 1750
 
     def shoot(self, x, y):
-        if time.time() * 1000 > self.last_shoot + self.cooldown:
+        if shader.get_time() > self.last_shoot + self.cooldown:
             for i in range(0, 360, 60):
                 self.projectiles.append([x, y, angle_to_motion(i, self.projectile_speed),
                                          pygame.transform.rotate(self.image, i)])
-            self.last_shoot = time.time() * 1000
+            self.last_shoot = shader.get_time()
 
 
 class RotatingEnemyProjectiles(EnemyProjectiles):
     def __init__(self, display):
-        # TODO: fix all image loadings
-        image = pygame.image.load("sprites/enemies/enemy_projectile.png")
         guns = [
             [42, 35, -45],
             [33, 35, -135]
         ]
-        self.shoot_height = display.get_height()/2-100
-        super().__init__(guns, image, display)
+        self.shoot_height = display.get_height() / 2 - 100
+        super().__init__(guns, normal_enemy_projectile, display)
         self.max_shoot_count = 5
         self.cooldown = 30
         self.shoot_count = 0
 
     def shoot(self, x, y):
-        if time.time() * 1000 > self.last_shoot + self.cooldown and\
+        if shader.get_time() > self.last_shoot + self.cooldown and \
                 y > self.shoot_height and self.shoot_count < self.max_shoot_count:
             for gun in self.guns:
-                self.projectiles.append([x + gun[0], y + gun[1], angle_to_motion(gun[2]+random.uniform(-10, 10), self.projectile_speed)])
+                self.projectiles.append(
+                    [x + gun[0], y + gun[1], angle_to_motion(gun[2] + random.uniform(-10, 10), self.projectile_speed)])
             self.shoot_count += 1
-            self.last_shoot = time.time() * 1000
+            self.last_shoot = shader.get_time()
 
 
 class BombProjectiles(EnemyProjectiles):
     def __init__(self, screen):
-        # TODO: fix all image loadings
-        image = pygame.image.load("sprites/bombs/bullet_bomb/projectile.png")
-        super().__init__([], image, screen)
+        super().__init__([], bullet_bomb_projectile, screen)
 
     def shoot(self, x, y):
         for i in range(0, 360, 24):

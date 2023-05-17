@@ -25,7 +25,6 @@ for i in range(0):
         enemies.append(BulletBomb([
             random.randint(enemy_normal_frames[0].get_width(), display.get_width() - enemy_normal_frames[0].get_width()), cy]))
 
-patterns.init(display)
 enemies.extend(patterns.get_nuclear_right(-10, NormalEnemy2, BulletBomb, enemy_normal2_frames[0], bullet_bomb_frames[0]))
 
 mouse.unlock()

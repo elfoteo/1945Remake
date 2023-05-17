@@ -4,7 +4,7 @@ from scripts.projectiles import Projectiles, TrailProjectiles, DelanneProjectile
 from scripts.utils import load_animation_frames
 from scripts.vfx import VFX
 
-flame_anim_frames = load_animation_frames("sprites/flame", scale=0.1)
+flame_anim_frames = None
 
 
 class Plane:
@@ -286,6 +286,7 @@ class F_86_Sabre(Plane):
         projectiles_speed = 6
         projectiles_dmg = 3
         base_dir = "sprites/planes/f-86_sabre/"
+        # TODO: planes images are not using the "load_image" method
         normal_projectiles = pygame.transform.scale_by(pygame.image.load(base_dir + "projectile.png"),
                                                        projectile_scale)
         name = "F 86 Sabre"
@@ -320,7 +321,8 @@ class F_86_Sabre(Plane):
 
 
 def init():
-    global all_planes
+    global all_planes, flame_anim_frames
+    flame_anim_frames = load_animation_frames("sprites/flame", scale=0.1)
     all_planes = [GrummanF3F(None), Boeing_P26_Peashooter(None), SEPECAT_Jaguar(None), ARSENAL_Delanne_10(None),
                   P_61_Black_Widow(None), F_86_Sabre(None)]
 

@@ -28,8 +28,9 @@ class Shader:
         print("Shaders loaded")
         self.program = self.ctx.program(vertex_shader=self.vert_shader, fragment_shader=self.frag_shader)
         self.render_object = self.ctx.vertex_array(self.program, [(self.quad_buffer, '2f 2f', 'vert', 'texcoord')])
-        self.shake_ammount = 0
+        self.shake_amount = 0
         self.red_overlay = 0
+        self.ticks = 0
 
     def get_ctx(self):
         return self.ctx
@@ -41,6 +42,11 @@ class Shader:
         tex.write(surf.get_view('1'))
         return tex
 
+    def get_time(self):
+        # 120 because we have 120 frames in 1 second
+        # and * 1000 because we want the result in milliseconds
+        return self.ticks/120*1000
+
     def draw(self, display, program_args=None):
         if program_args is None:
             program_args = {}
@@ -48,20 +54,21 @@ class Shader:
         frame_tex = self.surf_to_texture(display)
         frame_tex.use(0)
         self.program["tex"] = 0
-        self.program["shake_x"] = random.uniform(-self.shake_ammount, self.shake_ammount)
-        self.program["shake_y"] = random.uniform(-self.shake_ammount, self.shake_ammount)
+        self.program["shake_x"] = random.uniform(-self.shake_amount, self.shake_amount)
+        self.program["shake_y"] = random.uniform(-self.shake_amount, self.shake_amount)
         self.program["red_overlay"] = self.red_overlay
         for arg in program_args:
             self.program[arg] = program_args[arg]
         # self.program["time"] = time.time()*1000
-        self.shake_ammount = round(self.shake_ammount / 1.04, 2)
+        self.shake_amount = round(self.shake_amount / 1.04, 2)
         self.red_overlay = round(self.red_overlay / 1.03, 2)
         self.red_overlay -= 0.002
-        if self.shake_ammount <= 0.5:
-            self.shake_ammount = 0
+        if self.shake_amount <= 0.5:
+            self.shake_amount = 0
         if self.red_overlay <= 0.1:
             self.red_overlay = 0
 
+        self.ticks += 1
         self.render_object.render(mode=moderngl.TRIANGLE_STRIP)
         pygame.display.flip()
         frame_tex.release()

@@ -1,7 +1,14 @@
 import random
 import time
-
 import pygame.transform
+from scripts.shader import Shader
+
+shader: Shader = None
+
+
+def init(shader_):
+    global shader
+    shader = shader_
 
 
 class VFX:
@@ -16,7 +23,7 @@ class VFX:
         self.ended = False
         self.index = 0
         self.delay = delay
-        self.last_frame = time.time() * 1000
+        self.last_frame = shader.get_time()
         self.x = x
         self.y = y
         self.anchor = anchor
@@ -29,8 +36,8 @@ class VFX:
     def update(self, screen):
         if self.ended:
             return
-        if self.last_frame + self.delay < time.time() * 1000:
-            self.last_frame = time.time() * 1000
+        if self.last_frame + self.delay < shader.get_time():
+            self.last_frame = shader.get_time()
             self.index += 1
         if self.index >= len(self.frames) - 1:
             self.ended = True
@@ -38,6 +45,7 @@ class VFX:
 
         img = self.frames[self.index]
         if self.anchor is not None:
-            screen.blit(img, (self.anchor[0]() + self.offset[0] - img.get_width() / 2, self.anchor[1]() + self.offset[1] - img.get_width() / 2))
+            screen.blit(img, (self.anchor[0]() + self.offset[0] - img.get_width() / 2,
+                              self.anchor[1]() + self.offset[1] - img.get_width() / 2))
         else:
             screen.blit(img, (self.x - img.get_width() / 2, self.y - img.get_width() / 2))
