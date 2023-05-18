@@ -5,9 +5,11 @@ from scripts.stats import Stats
 from scripts.utils import *
 from scripts.utils import _quit
 from scripts.vfx import VFX
+from scripts.vfx import init as vfx_init
 from scripts.shader import Shader, ShaderDisplay
 from scripts.button import *
-import scripts.patterns as patterns
+from scripts import projectiles
+from scripts import patterns
 
 # init pygame and custom modules
 pygame.init()
@@ -25,10 +27,13 @@ clock = pygame.time.Clock()
 DEBUG = False
 if DEBUG:
     print("!!! THIS GAME IS RUNNING IN DEBUG MODE !!!")
-# TODO: better healthbar
+vfx_init(shader)  # initialize the vfx module
+projectiles.init(shader)  # initialize the projectiles module to load all images
 planes.init()  # initialize the plane module adding all planes to the "all_planes" list
+patterns.init(display)  # initialize the pattern module to place enemies more easly
 # load all images
 healthbar_img = load_image("sprites/ui/ingame/healthbar.png", 0.6)
+healthbar_frame_img = load_image("sprites/ui/ingame/healthbar_frame.png", 0.6)
 enemy_projectile_img = load_image("sprites/bombs/bullet_bomb/projectile.png")
 enemy_normal2_frames = load_animation_frames("sprites/enemies/enemy_normal2")
 enemy_normal_frames = load_animation_frames("sprites/enemies/enemy_normal")
@@ -104,7 +109,6 @@ gui_title_font = pygame.font.Font("font/font.ttf", 28)
 font = pygame.font.Font("font/font.ttf", 30)
 big_font = pygame.font.Font("font/font.ttf", 58)
 
-
 def quit_game():
     user_stats.save()
     _quit()
@@ -169,16 +173,30 @@ class Player:
         self.auto_rel = [0, 0]
         self.is_dummy = False
 
+    def reset(self):
+        self.plane = user_stats.get_plane()(visual_effects)
+        self.default_spawn_pos = [display.get_width() / 2, display.get_height() - self.plane.image.get_height() * 4]
+        self.pos = self.default_spawn_pos
+        self.abs_pos = self.pos
+        self.average_motion_x = 0
+        self.motion_history = []
+        self.auto_controlled = False
+        self.auto_rel = [0, 0]
+        self.is_dummy = False
+
     def refresh_plane(self):
         self.plane = user_stats.get_plane()(visual_effects)
 
     def draw_healthbar(self):
-        display.blit(healthbar_img, (10, 10))
-        rect = pygame.Rect(10 + 266 / 2 * 1.2, 11 + 22 / 2 * 1.2,
-                           -(215 / 2 * 1.2) * (max(self.plane.health / self.plane.max_health, 0) * -1 + 1),
-                           21 / 2 * 1.2 - 1)
-        rect.normalize()
-        pygame.draw.rect(display, (120, 120, 120), rect)
+        healthbar_pos = 10, 10
+        healthbar_scale = 0.6
+        display.blit(healthbar_frame_img, (10, 10))
+        # Cut the healthbar image blitting it in a smaller surface
+        healthbar_surf = pygame.Surface((healthbar_img.get_width() * max(self.plane.health / self.plane.max_health, 0),
+                                        healthbar_img.get_height()))
+        healthbar_surf.blit(healthbar_img, (0, 0))
+        display.blit(healthbar_surf, (healthbar_pos[0]+54*healthbar_scale, healthbar_pos[1]+24*healthbar_scale))
+
         if self.plane.health <= 0 and self.plane.alive:
             self.plane.alive = False
             visual_effects.append(VFX(death_frames[0], self.abs_pos[0], self.abs_pos[1], delay=10))
@@ -203,7 +221,7 @@ class Player:
     def deal_damage(self, ammount):
         self.plane.health -= ammount
         shader.red_overlay = 1
-        shader.shake_ammount += 1.5
+        shader.shake_amount += 1.5
 
     def draw(self):
         if not self.auto_controlled:
@@ -212,11 +230,11 @@ class Player:
             mx, my = self.auto_rel
 
         if pygame.mouse.get_pressed()[0]:
-            self.motion_history.append([mx, time.time()])
+            self.motion_history.append([mx, shader.get_time()/1000])
         else:
-            self.motion_history.append([0, time.time()])
+            self.motion_history.append([0, shader.get_time()/1000])
         for i in self.motion_history:
-            if i[1] + 0.7 <= time.time():
+            if i[1] + 0.7 <= shader.get_time()/1000:
                 self.motion_history.remove(i)
 
         first_values = [x[0] for x in self.motion_history]
@@ -250,7 +268,7 @@ class Coin:
         elif self.value >= 5:
             self.frames = coin5_frames
         self.index = 0
-        self.last_frame = time.time() * 1000
+        self.last_frame = shader.get_time()
         self.delay = 120
         self.abs_pos = (self.pos[0] - self.frames[self.index].get_width() / 2,
                         self.pos[1] - self.frames[self.index].get_height() / 2)
@@ -264,12 +282,12 @@ class Coin:
                         self.pos[1] + self.frames[self.index].get_height() / 2)
         if self.alive:
             self.pos[1] += scroll_speed+0.1
-            if self.last_frame + self.delay < time.time() * 1000:
+            if self.last_frame + self.delay < shader.get_time():
                 if self.index + 1 >= len(self.frames):
                     self.index = 0
                 else:
                     self.index += 1
-                self.last_frame = time.time() * 1000
+                self.last_frame = shader.get_time()
             display.blit(self.frames[self.index], self.pos)
             if self.pos[1] > display.get_height() + 30:
                 self.alive = False
@@ -342,6 +360,12 @@ class Enemy:
         self.auto_shoot = auto_shoot
         self.auto_move = auto_move
 
+    def get_width(self):
+        return self.image.get_width()
+
+    def get_height(self):
+        return self.image.get_height()
+
     def collide(self, rect) -> bool:
         for hitbox in self.hitbox:
             if pygame.Rect(self.pos[0] + hitbox.x, self.pos[1] + hitbox.y,
@@ -352,27 +376,27 @@ class Enemy:
     def draw_health_bar(self):
         if self.health < self.max_health:
             pygame.draw.rect(display, (80, 80, 80),
-                             (self.pos[0] + self.image.get_width() / 4, self.pos[1] + self.image.get_height() + 5,
-                              self.image.get_width() / 4 * 2, 5))
+                             (self.pos[0] + self.get_width() / 4, self.pos[1] + self.get_height() + 5,
+                              self.get_width() / 4 * 2, 5))
             pygame.draw.rect(display, (216, 13, 0),
-                             (self.pos[0] + self.image.get_width() / 4, self.pos[1] + self.image.get_height() + 5,
-                              (self.image.get_width() / 4 * 2) * (self.health / self.max_health), 5))
+                             (self.pos[0] + self.get_width() / 4, self.pos[1] + self.get_height() + 5,
+                              (self.get_width() / 4 * 2) * (self.health / self.max_health), 5))
 
     def on_death(self):
-        coins.append(Coin(1, [self.pos[0] + self.image.get_width() / 2, self.pos[1] + self.image.get_height() / 2]))
+        coins.append(Coin(1, [self.pos[0] + self.get_width() / 2, self.pos[1] + self.get_height() / 2]))
         if self.particles_on_death:
             for _ in range(2):
                 visual_effects.append(
-                    VFX(random.choice(death_frames), self.pos[0] + self.image.get_width() / 4, self.pos[1] + self.image.get_height() + 5,
+                    VFX(random.choice(death_frames), self.pos[0] + self.get_width() / 4, self.pos[1] + self.get_height() + 5,
                         delay=10))
             visual_effects.append(
-                VFX(death_frames[0], self.pos[0] + self.image.get_width() / 4,
-                    self.pos[1] + self.image.get_height() + 5,
+                VFX(death_frames[0], self.pos[0] + self.get_width() / 4,
+                    self.pos[1] + self.get_height() + 5,
                     delay=10))
 
     def draw(self):
         if self.auto_move:
-            self.pos[1] += self.speed
+            self.pos[1] += self.speed*shader.get_dt()
         if self.health <= 0 and self.alive:
             self.alive = False
             self.on_death()
@@ -383,11 +407,10 @@ class Enemy:
         self.projectiles.draw(display, player)
         if self.alive:
             self.draw_health_bar()
-            if self.pos[1] >= display.get_height() + self.image.get_height() + 100:
+            if self.pos[1] >= display.get_height() + self.get_height() + 100:
                 self.alive = False
             for p_box in player.plane.hitbox:
                 if self.collide((player.abs_pos[0] + p_box.x, player.abs_pos[1] + p_box.y, p_box.w, p_box.h)):
-                    # TODO: Explosion
                     player.deal_damage(self.health)
                     self.health = 0
             if DEBUG:
@@ -402,15 +425,15 @@ class NormalEnemy(Enemy):
         health = 35
         speed = 1
         self.frame_delay = 120
-        self.next_frame = time.time() * 1000
+        self.next_frame = shader.get_time()
         self.frame_index = 0
         hitbox = [pygame.Rect((round(47 * 0.6), round(3 * 0.6), round(16 * 0.6), round(87 * 0.6))),
                   pygame.Rect((round(0 * 0.6), round(44 * 0.6), round(110 * 0.6), round(22 * 0.6)))]
         super().__init__(speed, health, enemy_projectiles, image, pos, hitbox)
     
     def draw(self):
-        if self.next_frame + self.frame_delay <= time.time() * 1000:
-            self.next_frame = time.time() * 1000
+        if self.next_frame + self.frame_delay <= shader.get_time():
+            self.next_frame = shader.get_time()
             self.frame_index += 1
             if self.frame_index >= 2:
                 self.frame_index = 0
@@ -424,15 +447,15 @@ class NormalEnemy2(Enemy):
         health = 35
         speed = 1
         self.frame_delay = 110
-        self.next_frame = time.time() * 1000
+        self.next_frame = shader.get_time()
         self.frame_index = 0
         hitbox = [pygame.Rect((round(47 * 0.6), round(3 * 0.6), round(16 * 0.6), round(87 * 0.6))),
                   pygame.Rect((round(0 * 0.6), round(44 * 0.6), round(110 * 0.6), round(22 * 0.6)))]
         super().__init__(speed, health, enemy_projectiles, image, pos, hitbox)
 
     def draw(self):
-        if self.next_frame + self.frame_delay <= time.time() * 1000:
-            self.next_frame = time.time() * 1000
+        if self.next_frame + self.frame_delay <= shader.get_time():
+            self.next_frame = shader.get_time()
             self.frame_index += 1
             if self.frame_index >= 2:
                 self.frame_index = 0
@@ -448,7 +471,7 @@ class FollowingEnemy(Enemy):
         speed = 2
         self.base_speed = speed * 2
         self.frame_delay = 120
-        self.next_frame = time.time() * 1000
+        self.next_frame = shader.get_time()
         self.frame_index = 0
         self.base_image = image
         self.current_angle = 0
@@ -469,8 +492,8 @@ class FollowingEnemy(Enemy):
             self.current_angle += (angle - self.current_angle) / 15
             motion = angle_to_motion(self.current_angle, self.base_speed)
             if self.pos[1] < player.pos[1]:
-                self.pos[0] += motion[0]
-            self.pos[1] += self.base_speed
+                self.pos[0] += motion[0]*shader.get_dt()
+            self.pos[1] += self.base_speed*shader.get_dt()
             self.image = pivot_rotate(self.base_image, self.current_angle - 90, (self.base_image.get_width() / 2,
                                                                                  self.base_image.get_height() / 2),
                                       pygame.Vector2(0, 0))[0]
@@ -484,7 +507,7 @@ class RotatingEnemy(Enemy):
         health = 35
         speed = 1.5
         self.frame_delay = 140
-        self.next_frame = time.time() * 1000
+        self.next_frame = shader.get_time()
         self.frame_index = 0
         self.current_image = image
         hitbox = [pygame.Rect((0, 0, 76, 31)),
@@ -492,31 +515,30 @@ class RotatingEnemy(Enemy):
         super().__init__(speed, health, enemy_projectiles, image, pos, hitbox)
 
     def draw(self):
-        if self.next_frame + self.frame_delay <= time.time() * 1000:
-            self.next_frame = time.time() * 1000
+        if self.next_frame + self.frame_delay <= shader.get_time():
+            self.next_frame = shader.get_time()
             self.frame_index += 1
             if self.frame_index >= len(rotating_enemy_frames):
                 self.frame_index = 0
             self.current_image = rotating_enemy_frames[self.frame_index]
         # Draw
-        self.pos[1] += self.speed
+        self.pos[1] += self.speed*shader.get_dt()
         if self.health <= 0 and self.alive:
             self.alive = False
             self.on_death()
         if self.alive:
             display.blit(self.current_image,
-                         (self.pos[0] - self.current_image.get_width() / 2 + self.image.get_width() / 2,
+                         (self.pos[0] - self.current_image.get_width() / 2 + self.get_width() / 2,
                           self.pos[1]))
         if self.alive and self.pos[1] >= 0 and self.auto_shoot:
             self.projectiles.shoot(self.pos[0], self.pos[1])
         self.projectiles.draw(display, player)
         if self.alive:
             self.draw_health_bar()
-            if self.pos[1] >= display.get_height() + self.image.get_height() + 100:
+            if self.pos[1] >= display.get_height() + self.get_height() + 100:
                 self.alive = False
             for p_box in player.plane.hitbox:
                 if self.collide((player.abs_pos[0] + p_box.x, player.abs_pos[1] + p_box.y, p_box.w, p_box.h)):
-                    # TODO: Explosion
                     player.deal_damage(self.health)
                     self.health = 0
             if DEBUG:
@@ -536,9 +558,9 @@ class LaserEnemy(Enemy):
         super().__init__(speed, health, enemy_projectiles, image, pos, hitbox, auto_shoot=False, auto_move=False)
         self.laser_cooldown = 6000
         self.laser_duration = 3000
-        self.last_laser_active = time.time() * 1000
+        self.last_laser_active = shader.get_time()
         self.laser_active = False
-        self.last_shoot = time.time() * 1000
+        self.last_shoot = shader.get_time()
 
     def draw(self):
         super().draw()
@@ -552,13 +574,13 @@ class LaserEnemy(Enemy):
             pygame.draw.rect(display, (255, 0, 0), rect_r)
             if player.collides([rect_l, rect_r]):
                 player.deal_damage(player.plane.health + 1)
-        if self.last_laser_active + self.laser_cooldown < time.time() * 1000 and not self.laser_active and display.get_rect().colliderect(
+        if self.last_laser_active + self.laser_cooldown < shader.get_time() and not self.laser_active and display.get_rect().colliderect(
                 pygame.Rect(self.hitbox[0].x + self.pos[0], self.hitbox[0].y + self.pos[1],
                             self.hitbox[0].w, self.hitbox[0].h)):
-            self.last_shoot = time.time() * 1000
+            self.last_shoot = shader.get_time()
             self.laser_active = True
-        if self.laser_active and self.last_shoot + self.laser_duration < time.time() * 1000:
-            self.last_laser_active = time.time() * 1000
+        if self.laser_active and self.last_shoot + self.laser_duration < shader.get_time():
+            self.last_laser_active = shader.get_time()
             self.laser_active = False
 
 
@@ -575,22 +597,21 @@ class EnemyShooter6Dir(Enemy):
         super().__init__(speed, health, enemy_projectiles, image, pos, hitbox)
 
     def draw(self):
-        self.pos[1] += self.speed
+        self.pos[1] += self.speed*shader.get_dt()
         if self.health <= 0 and self.alive:
             self.alive = False
             self.on_death()
         if self.alive:
             display.blit(self.image, self.pos)
         if self.alive and self.pos[1] >= 0 and self.auto_shoot:
-            self.projectiles.shoot(self.pos[0] + self.image.get_width() / 2, self.pos[1] + self.image.get_height() / 2)
+            self.projectiles.shoot(self.pos[0] + self.get_width() / 2, self.pos[1] + self.get_height() / 2)
         self.projectiles.draw(display, player)
         if self.alive:
             self.draw_health_bar()
-            if self.pos[1] >= display.get_height() + self.image.get_height() + 100:
+            if self.pos[1] >= display.get_height() + self.get_height() + 100:
                 self.alive = False
             for p_box in player.plane.hitbox:
                 if self.collide((player.abs_pos[0] + p_box.x, player.abs_pos[1] + p_box.y, p_box.w, p_box.h)):
-                    # TODO: Explosion
                     player.deal_damage(self.health)
                     self.health = 0
             if DEBUG:
@@ -605,7 +626,7 @@ class BulletBomb(Enemy):
         enemy_projectiles = BombProjectiles(display)
         image = bullet_bomb_frames[0]
         self.image_scale = 1
-        self.next_frame = time.time() * 1000
+        self.next_frame = shader.get_time()
         self.frame_index = 0
         self.frame_delay = 150
         hitbox = [
@@ -615,12 +636,12 @@ class BulletBomb(Enemy):
 
     def on_death(self):
         self.projectiles.shoot(self.pos[0], self.pos[1])
-        shader.shake_ammount += 1.6
+        shader.shake_amount += 1.6
         super().on_death()
 
     def draw(self):
-        if self.next_frame + self.frame_delay <= time.time() * 1000:
-            self.next_frame = time.time() * 1000
+        if self.next_frame + self.frame_delay <= shader.get_time():
+            self.next_frame = shader.get_time()
             self.frame_index += 1
             if self.frame_index >= 5:
                 self.frame_index = 0
@@ -635,7 +656,7 @@ class NuclearBomb(Enemy):
         enemy_projectiles = EnemyProjectiles([], 0, display, 99999)
         image = nuclear_bomb_frames[0]
         self.image_scale = 1
-        self.next_frame = time.time() * 1000
+        self.next_frame = shader.get_time()
         self.frame_index = 0
         self.frame_delay = 250
         hitbox = [
@@ -645,7 +666,7 @@ class NuclearBomb(Enemy):
                          particles_on_death=False)
 
     def on_death(self):
-        shader.shake_ammount += 2.4
+        shader.shake_amount += 2.4
         for enemy in enemies:
             if distance_between_points(enemy.pos, self.pos) <= 350:
                 enemy.health -= distance_between_points(enemy.pos, self.pos) * -1 + 400
@@ -657,14 +678,14 @@ class NuclearBomb(Enemy):
         for i in death_frames[0]:
             anim.append(pygame.transform.scale_by(i, 2.5))
         visual_effects.append(
-            VFX(anim, self.pos[0] + self.image.get_width() / 4, self.pos[1] + self.image.get_height() + 5,
+            VFX(anim, self.pos[0] + self.get_width() / 4, self.pos[1] + self.get_height() + 5,
                 delay=10))
         del anim
         super().on_death()
 
     def draw(self):
-        if self.next_frame + self.frame_delay <= time.time() * 1000:
-            self.next_frame = time.time() * 1000
+        if self.next_frame + self.frame_delay <= shader.get_time():
+            self.next_frame = shader.get_time()
             self.frame_index += 1
             if self.frame_index >= 5:
                 self.frame_index = 0

@@ -1,14 +1,9 @@
-import math
-import sys
-
-import pygame
-
-from scripts.button import Button
 from scripts.engine import *
 
 
 def pause(level):
     paused = True
+    shader.ingame = False
     scr_copy = display.copy().convert_alpha()
     scr_copy.fill((255, 255, 255, 180), None, pygame.BLEND_RGBA_MULT)
     scr_copy_original = display.copy()
@@ -60,15 +55,16 @@ def pause(level):
                     if exit_popup.get_result(screen_copy) == 2:
                         defeat_screen(level)
                         return "quit"
-                    # TODO: defeat screen
         shader.draw(display)
         screen_copy = display.copy()
         clock.tick(120)
+    shader.ingame = True
 
 
 def win_screen(level):
+    shader.ingame = False
     shader.red_overlay = 0
-    shader.shake_ammount = 0
+    shader.shake_amount = 0
     mouse.unlock()
     head_movement_mult = 2
 
@@ -176,8 +172,9 @@ def win_screen(level):
 
 
 def defeat_screen(level):
+    shader.ingame = False
     shader.red_overlay = 0
-    shader.shake_ammount = 0
+    shader.shake_amount = 0
     mouse.unlock()
 
     normal_font = pygame.font.SysFont("", 30)
@@ -216,6 +213,8 @@ def defeat_screen(level):
 
 
 def play_level(level):
+    player.reset()
+    shader.ingame = True
     mouse.lock()
     # TODO: change all to work with delta time
     # win_screen()
@@ -250,7 +249,6 @@ def play_level(level):
             enemy.draw()
             if not enemy.alive and enemy.projectiles.projectiles == []:
                 new_enemies.remove(enemy)
-                # TODO: Explosion
         level.enemies = new_enemies.copy()
         del new_enemies
         if level.enemies == [] and coins == [] and not level.finished and not end_anim_trigger:
@@ -259,27 +257,27 @@ def play_level(level):
 
         if end_anim_trigger and end_anim + end_anim_cooldown < time.time() and not started_animation:
             level.finished = True
-            level.finished_timestamp = time.time() * 1000
+            level.finished_timestamp = shader.get_ingame_time()
             started_animation = True
             player.auto_controlled = True
             player.auto_rel = [0, 0]
 
         if level.finished:
             player.auto_controlled = True
-            y_movment = ((level.finished_timestamp + level.finished_cooldown - time.time() * 1000) / 1000 - 4)
+            y_movment = ((level.finished_timestamp + level.finished_cooldown - shader.get_ingame_time()) / 1000 - 4)
             if y_movment <= 0:
                 y_movment *= 4 + end_animation_y_counter * 0.13
                 end_animation_y_counter += 1
             player.auto_rel = [
                 0,
-                y_movment
+                y_movment*shader.get_dt()
             ]
             player.is_dummy = True
         
         if -100 >= player.abs_pos[1] >= -120:
             before_end_timer = time.time()
 
-        if before_end_timer is not None and before_end_timer+before_end_cooldown < time.time() and level.finished:  # TODO: better wait time before win, 2s timer
+        if before_end_timer is not None and before_end_timer+before_end_cooldown < time.time() and level.finished:
             player.auto_controlled = False
             win_screen(level)
             user_stats.data["coins"] += user_stats.data["ingame_coins"]

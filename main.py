@@ -1,32 +1,9 @@
 import random
 import pygame.font
-
 from scripts.game import *
 from scripts.label import Label
 from scripts.planes import all_planes
-
-cy = -300
-for i in range(0):
-    cy -= random.randint(50, 250)
-    a = random.randint(0, 5)
-    if a == 0:
-        enemies.append(RotatingEnemy([
-            random.randint(enemy_normal_frames[0].get_width(), display.get_width() - enemy_normal_frames[0].get_width()), cy]))
-    elif a == 1:
-        enemies.append(RotatingEnemy([
-            random.randint(enemy_normal_frames[0].get_width(), display.get_width() - enemy_normal_frames[0].get_width()), cy]))
-    elif a == 2:
-        enemies.append(NuclearBomb([
-            random.randint(enemy_normal_frames[0].get_width(), display.get_width() - enemy_normal_frames[0].get_width()), cy]))
-    elif a == 3:
-        enemies.append(EnemyShooter6Dir([
-            random.randint(enemy_normal_frames[0].get_width(), display.get_width() - enemy_normal_frames[0].get_width()), cy]))
-    elif a == 5:
-        enemies.append(BulletBomb([
-            random.randint(enemy_normal_frames[0].get_width(), display.get_width() - enemy_normal_frames[0].get_width()), cy]))
-
-patterns.init(display)
-enemies.extend(patterns.get_nuclear_right(-10, NormalEnemy2, BulletBomb, enemy_normal2_frames[0], bullet_bomb_frames[0]))
+import pickle
 
 mouse.unlock()
 singleplayer_button = Button(display.get_width() / 2 - (148 * 1.5) / 2, 700, 148 * 1.5, 37 * 1.5,
@@ -38,7 +15,7 @@ dogtags_label = Label(user_stats.data["dogtags"], dogtag_icon, (0, 0), font_smal
 coins_label = Label(user_stats.data["coins"], coin_icon, (dogtags_label.get_width(), 0), font_small)
 gems_label = Label(user_stats.data["gems"], gem_icon, (coins_label.get_width() + dogtags_label.get_width(), 0), font_small)
 
-level1 = Level(enemies, 1, 1, "sprites/background/desert.png")
+
 
 dogtags_plus_rect = pygame.Rect(93 * 1.25, 3 * 1.25, 22 * 1.25, 21 * 1.25)
 
@@ -139,10 +116,8 @@ while True:
             surf = dogtags_timer_font.render("Full Dogtag!", False, (183, 240, 80))
             display.blit(surf, (display.get_width() / 2 - surf.get_width() / 2, 375))
         else:
-            surf = dogtags_timer_font.render("Time until next tag: ", False, (183, 240, 80))
+            surf = dogtags_timer_font.render("Restore 1 in: "+user_stats.get_next_dogtag_time(), True, (183, 240, 80))
             display.blit(surf, (display.get_width() / 2 - surf.get_width() / 2, 375))
-            surf = dogtags_timer_font.render(user_stats.get_next_dogtag_time(), False, (183, 240, 80))
-            display.blit(surf, (display.get_width() / 2 - surf.get_width() / 2, 425))
         purchase_30_dogtags.draw(display)
         purchase_100_dogtags.draw(display)
         display.blit(gem_icon, (
@@ -226,6 +201,10 @@ while True:
             if singleplayer_button.handle_event(event):
                 if user_stats.can_purchase("dogtags", 5):
                     user_stats.data["dogtags"] -= 5
+                    patterns.save([[patterns.get_nuclear_right, [-200, NormalEnemy2, BulletBomb, enemy_normal2_frames[0].get_size(), bullet_bomb_frames[0].get_size()]]], "level1")
+                    enemies = patterns.load("level1")
+                    level1 = Level(enemies, 1, 1, "sprites/background/desert.png")
+                    
                     play_level(level1)
                 elif not user_stats.can_purchase("dogtags", 5):
                     current_gui = 1
