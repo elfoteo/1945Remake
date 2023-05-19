@@ -97,6 +97,9 @@ planes_gui_arrow_back_frame = load_image("sprites/ui/planes/arrow_back_frame.png
 green_button = load_image('sprites/ui/green_button.png', 1.5)
 pile_of_coins = load_image('sprites/ui/level/pile_of_coins.png', 1)
 pile_of_gems = load_image('sprites/ui/level/pile_of_gems.png', 1)
+italy_map = load_image('sprites/ui/map/italy_map.png', 1.22)
+level_icon = load_image('sprites/ui/map/level_icon.png', 0.65)
+locked_level_icon = load_image('sprites/ui/map/locked_level_icon.png', 0.65)
 visual_effects = []
 user_stats = Stats()
 scroll_speed = 0.35
@@ -108,6 +111,7 @@ font_medium = pygame.font.Font("font/font.ttf", 24)
 gui_title_font = pygame.font.Font("font/font.ttf", 28)
 font = pygame.font.Font("font/font.ttf", 30)
 big_font = pygame.font.Font("font/font.ttf", 58)
+
 
 def quit_game():
     user_stats.save()
@@ -193,9 +197,9 @@ class Player:
         display.blit(healthbar_frame_img, (10, 10))
         # Cut the healthbar image blitting it in a smaller surface
         healthbar_surf = pygame.Surface((healthbar_img.get_width() * max(self.plane.health / self.plane.max_health, 0),
-                                        healthbar_img.get_height()))
+                                         healthbar_img.get_height()))
         healthbar_surf.blit(healthbar_img, (0, 0))
-        display.blit(healthbar_surf, (healthbar_pos[0]+54*healthbar_scale, healthbar_pos[1]+24*healthbar_scale))
+        display.blit(healthbar_surf, (healthbar_pos[0] + 54 * healthbar_scale, healthbar_pos[1] + 24 * healthbar_scale))
 
         if self.plane.health <= 0 and self.plane.alive:
             self.plane.alive = False
@@ -218,8 +222,8 @@ class Player:
         text = outlined_text(str(user_stats.data["ingame_coins"]), font)
         display.blit(text, (display.get_width() - 50 - text.get_width(), 150))
 
-    def deal_damage(self, ammount):
-        self.plane.health -= ammount
+    def deal_damage(self, amount):
+        self.plane.health -= amount
         shader.red_overlay = 1
         shader.shake_amount += 1.5
 
@@ -230,11 +234,11 @@ class Player:
             mx, my = self.auto_rel
 
         if pygame.mouse.get_pressed()[0]:
-            self.motion_history.append([mx, shader.get_time()/1000])
+            self.motion_history.append([mx, shader.get_time() / 1000])
         else:
-            self.motion_history.append([0, shader.get_time()/1000])
+            self.motion_history.append([0, shader.get_time() / 1000])
         for i in self.motion_history:
-            if i[1] + 0.7 <= shader.get_time()/1000:
+            if i[1] + 0.7 <= shader.get_time() / 1000:
                 self.motion_history.remove(i)
 
         first_values = [x[0] for x in self.motion_history]
@@ -249,7 +253,8 @@ class Player:
         if self.plane.alive:
             self.plane.update(self.average_motion_x, display, enemies, self.abs_pos, is_dummy=self.is_dummy)
             display.blit(self.plane.image,
-                        (self.pos[0] - self.plane.image.get_width() / 2, self.pos[1] - self.plane.image.get_height() / 2))
+                         (self.pos[0] - self.plane.image.get_width() / 2,
+                          self.pos[1] - self.plane.image.get_height() / 2))
         if DEBUG:
             for box in self.plane.hitbox:
                 pygame.draw.rect(display, (255, 0, 0), (self.abs_pos[0] + box.x, self.abs_pos[1] + box.y, box.w, box.h))
@@ -281,7 +286,7 @@ class Coin:
         self.abs_pos = (self.pos[0] + self.frames[self.index].get_width() / 2,
                         self.pos[1] + self.frames[self.index].get_height() / 2)
         if self.alive:
-            self.pos[1] += scroll_speed+0.1
+            self.pos[1] += scroll_speed + 0.15
             if self.last_frame + self.delay < shader.get_time():
                 if self.index + 1 >= len(self.frames):
                     self.index = 0
@@ -301,19 +306,20 @@ class Coin:
                 user_stats.add_ingame_coins(self.value)
                 self.alive = False
 
+
 class Popup:
     def __init__(self, title, option1, option2, description) -> None:
         self.title = title
-        self.option_1 = Button(display.get_width() / 2-148/2, display.get_height() / 2+50, 148,
-                           40,
-                           'sprites/ui/green_button.png',
-                           text=option1,
-                           font="font/font.ttf", increase_font_size=0.15)
-        self.option_2 = Button(display.get_width() / 2 - 148/2, display.get_height() / 2 + 100, 148,
-                         40,
-                         'sprites/ui/yellow_button.png',
-                         text=option2,
-                         font="font/font.ttf", increase_font_size=0.15)
+        self.option_1 = Button(display.get_width() / 2 - 148 / 2, display.get_height() / 2 + 50, 148,
+                               40,
+                               'sprites/ui/green_button.png',
+                               text=option1,
+                               font="font/font.ttf", increase_font_size=0.15)
+        self.option_2 = Button(display.get_width() / 2 - 148 / 2, display.get_height() / 2 + 100, 148,
+                               40,
+                               'sprites/ui/yellow_button.png',
+                               text=option2,
+                               font="font/font.ttf", increase_font_size=0.15)
         self.description = description
 
     def get_result(self, display_copy):
@@ -324,11 +330,15 @@ class Popup:
         while True:
             display.blit(display_copy, (0, 0))
             display.blit(transparent_overlay, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-            display.blit(popup_bg, (display.get_width()/2-popup_bg.get_width()/2, display.get_height()/2-popup_bg.get_height()/2))
+            display.blit(popup_bg, (
+                display.get_width() / 2 - popup_bg.get_width() / 2,
+                display.get_height() / 2 - popup_bg.get_height() / 2))
             display.blit(popup_title_label, (display.get_width() / 2 - popup_title_label.get_width() / 2,
-                                             display.get_height()/2-popup_bg.get_height()/2))
-            display.blit(popup_title, (display.get_width() / 2 - popup_title.get_width() / 2, display.get_height()/2-popup_bg.get_height()/2+5))
-            display.blit(popup_description, (display.get_width() / 2 - popup_description.get_width() / 2, display.get_height()/2-75))
+                                             display.get_height() / 2 - popup_bg.get_height() / 2))
+            display.blit(popup_title, (display.get_width() / 2 - popup_title.get_width() / 2,
+                                       display.get_height() / 2 - popup_bg.get_height() / 2 + 5))
+            display.blit(popup_description,
+                         (display.get_width() / 2 - popup_description.get_width() / 2, display.get_height() / 2 - 75))
             self.option_1.draw(display)
             self.option_2.draw(display)
 
@@ -344,6 +354,7 @@ class Popup:
             mouse.draw()
             shader.draw(display)
             clock.tick(120)
+
 
 class Enemy:
     def __init__(self, speed, health, enemy_projectiles, image, pos, hitbox, auto_shoot=True,
@@ -387,7 +398,8 @@ class Enemy:
         if self.particles_on_death:
             for _ in range(2):
                 visual_effects.append(
-                    VFX(random.choice(death_frames), self.pos[0] + self.get_width() / 4, self.pos[1] + self.get_height() + 5,
+                    VFX(random.choice(death_frames), self.pos[0] + self.get_width() / 4,
+                        self.pos[1] + self.get_height() + 5,
                         delay=10))
             visual_effects.append(
                 VFX(death_frames[0], self.pos[0] + self.get_width() / 4,
@@ -396,7 +408,7 @@ class Enemy:
 
     def draw(self):
         if self.auto_move:
-            self.pos[1] += self.speed*shader.get_dt()
+            self.pos[1] += self.speed * shader.get_dt()
         if self.health <= 0 and self.alive:
             self.alive = False
             self.on_death()
@@ -422,7 +434,7 @@ class NormalEnemy(Enemy):
     def __init__(self, pos):
         enemy_projectiles = EnemyProjectiles([], 0, display, 99999)
         image = enemy_normal_frames[0]
-        health = 35
+        health = 30
         speed = 1
         self.frame_delay = 120
         self.next_frame = shader.get_time()
@@ -430,7 +442,7 @@ class NormalEnemy(Enemy):
         hitbox = [pygame.Rect((round(47 * 0.6), round(3 * 0.6), round(16 * 0.6), round(87 * 0.6))),
                   pygame.Rect((round(0 * 0.6), round(44 * 0.6), round(110 * 0.6), round(22 * 0.6)))]
         super().__init__(speed, health, enemy_projectiles, image, pos, hitbox)
-    
+
     def draw(self):
         if self.next_frame + self.frame_delay <= shader.get_time():
             self.next_frame = shader.get_time()
@@ -440,11 +452,12 @@ class NormalEnemy(Enemy):
             self.image = enemy_normal_frames[self.frame_index]
         super().draw()
 
+
 class NormalEnemy2(Enemy):
     def __init__(self, pos):
         enemy_projectiles = EnemyProjectiles([], 0, display, 99999)
         image = enemy_normal2_frames[0]
-        health = 35
+        health = 30
         speed = 1
         self.frame_delay = 110
         self.next_frame = shader.get_time()
@@ -492,8 +505,8 @@ class FollowingEnemy(Enemy):
             self.current_angle += (angle - self.current_angle) / 15
             motion = angle_to_motion(self.current_angle, self.base_speed)
             if self.pos[1] < player.pos[1]:
-                self.pos[0] += motion[0]*shader.get_dt()
-            self.pos[1] += self.base_speed*shader.get_dt()
+                self.pos[0] += motion[0] * shader.get_dt()
+            self.pos[1] += self.base_speed * shader.get_dt()
             self.image = pivot_rotate(self.base_image, self.current_angle - 90, (self.base_image.get_width() / 2,
                                                                                  self.base_image.get_height() / 2),
                                       pygame.Vector2(0, 0))[0]
@@ -522,7 +535,7 @@ class RotatingEnemy(Enemy):
                 self.frame_index = 0
             self.current_image = rotating_enemy_frames[self.frame_index]
         # Draw
-        self.pos[1] += self.speed*shader.get_dt()
+        self.pos[1] += self.speed * shader.get_dt()
         if self.health <= 0 and self.alive:
             self.alive = False
             self.on_death()
@@ -597,7 +610,7 @@ class EnemyShooter6Dir(Enemy):
         super().__init__(speed, health, enemy_projectiles, image, pos, hitbox)
 
     def draw(self):
-        self.pos[1] += self.speed*shader.get_dt()
+        self.pos[1] += self.speed * shader.get_dt()
         if self.health <= 0 and self.alive:
             self.alive = False
             self.on_death()
@@ -731,6 +744,82 @@ class Level:
         return self.rewarded_coins, self.rewarded_gems
 
 
+class LevelButton(Button):
+    def __init__(self, x, y, level_number):
+        self.level_number = str(level_number)
+        x = x * 1.22
+        y = y * 1.22
+        self.texture_locked = locked_level_icon.copy()
+        self.reached = lambda: user_stats.data["level_reached"]-1 >= int(self.level_number)
+        super().__init__(x, y, level_icon.get_width(), level_icon.get_height(), level_icon)
+        self.rect.center = (x - 18, y)
+
+    def draw(self, display, map_pos=(100, 100)):
+        self.rect.x += round(map_pos[0])
+        self.rect.y += round(map_pos[1])
+
+        if user_stats.data["level_reached"] >= int(self.level_number):
+            if self.is_clicked:
+                display.blit(self.texture_down, self.rect)
+            else:
+                display.blit(self.texture, self.rect)
+        else:
+            display.blit(self.texture_locked, self.rect)
+
+        if self.is_clicked:
+            surf = self.font.render(self.level_number, True, (180, 180, 180))
+        else:
+            surf = self.font.render(self.level_number, True, (255, 255, 255))
+        display.blit(surf, (self.rect.x + 40 / 2 - surf.get_width(), self.rect.y + 72 * 0.65 - surf.get_height()))
+        self.rect.x -= round(map_pos[0])
+        self.rect.y -= round(map_pos[1])
+
+    def handle_event(self, event, map_pos=(100, 100)):
+        if user_stats.data["level_reached"] >= int(self.level_number):
+            self.rect.x += round(map_pos[0])
+            self.rect.y += round(map_pos[1])
+            res = False
+            if event.type == pygame.MOUSEMOTION:
+                if self.rect.collidepoint(event.pos):
+                    self.is_hovered = True
+                else:
+                    self.is_hovered = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if self.rect.collidepoint(event.pos) and event.button == 1:
+                    self.is_clicked = True
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if self.is_clicked and event.button == 1:
+                    if self.rect.collidepoint(event.pos):
+                        self.is_clicked = False
+                        res = True
+                    self.is_clicked = False
+            self.rect.x -= round(map_pos[0])
+            self.rect.y -= round(map_pos[1])
+            return res
+        else:
+            return False
+
+    def get_center(self, map_pos):
+        self.rect.x += round(map_pos[0])
+        self.rect.y += round(map_pos[1])
+        res = self.rect.x + 83*0.65, self.rect.y+35*0.65
+        self.rect.x -= round(map_pos[0])
+        self.rect.y -= round(map_pos[1])
+        return res
+
+    def get_level(self):
+        level_data = []
+        level_data.append([patterns.get_line_right, [-250, NormalEnemy, enemy_normal_frames[0].get_size(), 10, 50]])
+        level_data.append([patterns.get_line_left, [-1250, NormalEnemy2, enemy_normal2_frames[0].get_size(), 10, 50]])
+        level_data.append([patterns.get_random, [-2500, NormalEnemy2, enemy_normal_frames[0].get_size(), 10, 150]])
+        patterns.save(level_data, "level"+self.level_number)
+        enemies.clear()
+        enemies.extend(patterns.load("level"+self.level_number))
+        return Level(enemies, int(self.level_number), 1, "sprites/background/desert.png")
+
+
 mouse = Mouse()
 player = Player()
 enemies = []
+levels = [LevelButton(198, 114, 1), LevelButton(200, 200, 2), LevelButton(260, 240, 3)]
+

@@ -1,5 +1,9 @@
 import pickle
-display = None
+import random
+
+import pygame
+
+display: pygame.Surface = None
 
 
 def init(dis):
@@ -43,6 +47,39 @@ def get_nuclear_right(y, surrounding, inside, spacing_ext, spacing_int):
     pattern.append(inside(
         [base_x + 10 + spacing_ext[0] * 1.5 - spacing_int[0] / 2, y + 10 + spacing_ext[1]]))
     pattern.append(surrounding([base_x + 10 * 2 + spacing_ext[0] * 2, y + 10 + spacing_ext[1]]))
+    return pattern
+
+
+def get_line_right(y, enemy, size, count, sep_y):
+    pattern = []
+    base_x = display.get_width() - size[0]*1.5
+    for i in range(count):
+        pattern.append(enemy([base_x, y-size[1]*i-i*sep_y]))
+    return pattern
+
+
+def get_line_left(y, enemy, size, count, sep_y):
+    pattern = []
+    base_x = size[0]/2
+    for i in range(count):
+        pattern.append(enemy([base_x, y-size[1]*i-i*sep_y]))
+    return pattern
+
+
+def get_line_center(y, enemy, size, count, sep_y):
+    pattern = []
+    base_x = display.get_width()/2-size[0]/2
+    for i in range(count):
+        pattern.append(enemy([base_x, y-size[1]*i-i*sep_y]))
+    return pattern
+
+
+def get_random(y, enemy, size, count, sep_y):
+    pattern = []
+    min_x = size[0]/2
+    max_x = display.get_width()-size[0]*1.5
+    for i in range(count):
+        pattern.append(enemy([random.randint(min_x, max_x), y-size[1]*i-i*sep_y]))
     return pattern
 
 

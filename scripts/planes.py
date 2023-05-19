@@ -75,7 +75,7 @@ class GrummanF3F(Plane):
         health = 100
         fire_cooldown = 250
         projectiles_speed = 7
-        projectiles_dmg = 8
+        projectiles_dmg = 3
         base_dir = "sprites/planes/grumman_f3f/"
         name = "Grumman F3F"
         icon = pygame.transform.scale_by(pygame.image.load(base_dir + "icon.png"), 0.8)
@@ -94,7 +94,7 @@ class GrummanF3F(Plane):
 
 class Boeing_P26_Peashooter(Plane):
     def __init__(self, vfx):
-        image_scale = 0.5
+        image_scale = 0.6
         projectile_scale = 0.5
         angle_offset = 1.5
         guns = [[62 * image_scale, 24 * image_scale, 80 - angle_offset],
@@ -178,7 +178,7 @@ class ARSENAL_Delanne_10(Plane):
         health = 100
         fire_cooldown = 300
         projectiles_speed = 10
-        projectiles_dmg = 11
+        projectiles_dmg = 10
         base_dir = "sprites/planes/arsenal-delanne_10/"
         projectile_center_image = pygame.transform.scale_by(pygame.image.load(base_dir + "center_projectile.png"),
                                                             projectile_scale)
@@ -284,7 +284,7 @@ class F_86_Sabre(Plane):
         health = 100
         fire_cooldown = 385
         projectiles_speed = 6
-        projectiles_dmg = 3
+        projectiles_dmg = 5
         base_dir = "sprites/planes/f-86_sabre/"
         # TODO: planes images are not using the "load_image" method
         normal_projectiles = pygame.transform.scale_by(pygame.image.load(base_dir + "projectile.png"),

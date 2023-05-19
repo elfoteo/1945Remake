@@ -148,14 +148,16 @@ def win_screen(level):
         level_rewards_rect = level_rewards_bg.get_rect()
         display.blit(pile_of_coins, (display.get_width() / 2 - 100,
                                      375 + level_rewards_rect.h / 2 - pile_of_coins.get_height()))
-        surf = font_medium_small.render(str(rewards[0]+user_stats.data["ingame_coins"]), True, (255, 255, 255))
+        surf = font_medium_small.render(str(rewards[0] + user_stats.data["ingame_coins"]), True, (255, 255, 255))
         display.blit(surf,
-                     (display.get_width() / 2 - 100 + pile_of_coins.get_width()/2-surf.get_width()/2, 375 + level_rewards_rect.h / 2 - pile_of_coins.get_height()+50))
-        display.blit(pile_of_gems, (display.get_width() / 2 + 100-pile_of_gems.get_width(),
+                     (display.get_width() / 2 - 100 + pile_of_coins.get_width() / 2 - surf.get_width() / 2,
+                      375 + level_rewards_rect.h / 2 - pile_of_coins.get_height() + 50))
+        display.blit(pile_of_gems, (display.get_width() / 2 + 100 - pile_of_gems.get_width(),
                                     375 + level_rewards_rect.h / 2 - pile_of_gems.get_height()))
         surf = font_medium_small.render(str(rewards[1]), True, (255, 255, 255))
         display.blit(surf,
-                     (display.get_width() / 2 + 100 - pile_of_gems.get_width()/2-surf.get_width()/2, 375 + level_rewards_rect.h / 2 - pile_of_coins.get_height()+50))
+                     (display.get_width() / 2 + 100 - pile_of_gems.get_width() / 2 - surf.get_width() / 2,
+                      375 + level_rewards_rect.h / 2 - pile_of_coins.get_height() + 50))
         pass_lvl.draw(display)
 
         for event in pygame.event.get():
@@ -183,8 +185,8 @@ def defeat_screen(level):
     while True:
         display.blit(ui_background, (0, 0))
 
-        display.blit(level_defeated, (display.get_width()/2-level_defeated.get_width()/2, 85))
-        
+        display.blit(level_defeated, (display.get_width() / 2 - level_defeated.get_width() / 2, 85))
+
         display.blit(level_banner, (display.get_width() / 2 - level_banner.get_width() / 2, 300))
         surf = normal_font.render(level.name, True, (255, 255, 255))
         display.blit(surf, (
@@ -193,11 +195,12 @@ def defeat_screen(level):
 
         display.blit(level_rewards_bg, (display.get_width() / 2 - level_rewards_bg.get_width() / 2, 375))
         level_rewards_rect = level_rewards_bg.get_rect()
-        display.blit(pile_of_coins, (display.get_width() / 2 - pile_of_coins.get_width()/2,
+        display.blit(pile_of_coins, (display.get_width() / 2 - pile_of_coins.get_width() / 2,
                                      375 + level_rewards_rect.h / 2 - pile_of_coins.get_height()))
         surf = font_medium_small.render(str(user_stats.data["ingame_coins"]), True, (255, 255, 255))
         display.blit(surf,
-                     (display.get_width() / 2 - surf.get_width()/2, 375 + level_rewards_rect.h / 2 - pile_of_coins.get_height()+50))
+                     (display.get_width() / 2 - surf.get_width() / 2,
+                      375 + level_rewards_rect.h / 2 - pile_of_coins.get_height() + 50))
         pass_lvl.draw(display)
 
         for event in pygame.event.get():
@@ -216,26 +219,22 @@ def play_level(level):
     player.reset()
     shader.ingame = True
     mouse.lock()
-    # TODO: change all to work with delta time
-    # win_screen()
-
     # a lot of timers
     end_anim_trigger = False
     end_anim = time.time()
     end_anim_cooldown = 2
     started_animation = False
     end_animation_y_counter = 0
-    scroll_y = -level.bg.get_height()+screen.get_height()
+    scroll_y = -level.bg.get_height() + screen.get_height()
     bg_copy = level.bg.copy()
     before_end_timer = None
     before_end_cooldown = 2
-    
-    
+
     while True:
         # display.fill((32, 56, 212))
         scroll_y += scroll_speed
         display.blit(level.bg, (0, scroll_y))
-        display.blit(bg_copy, (0, scroll_y-bg_copy.get_height()))
+        display.blit(bg_copy, (0, scroll_y - bg_copy.get_height()))
         if scroll_y >= level.bg.get_height():
             scroll_y = 0
 
@@ -270,19 +269,19 @@ def play_level(level):
                 end_animation_y_counter += 1
             player.auto_rel = [
                 0,
-                y_movment*shader.get_dt()
+                y_movment * shader.get_dt()
             ]
             player.is_dummy = True
-        
+
         if -100 >= player.abs_pos[1] >= -120:
             before_end_timer = time.time()
 
-        if before_end_timer is not None and before_end_timer+before_end_cooldown < time.time() and level.finished:
+        if before_end_timer is not None and before_end_timer + before_end_cooldown < time.time() and level.finished:
             player.auto_controlled = False
             win_screen(level)
             user_stats.data["coins"] += user_stats.data["ingame_coins"]
             user_stats.data["ingame_coins"] = 0
-            return
+            return True
         player.draw()  # draw, update the actual plane
         # draw the visual effects for the plane, explosions, projectiles
         for vfx in visual_effects:
@@ -298,7 +297,7 @@ def play_level(level):
 
         if not player.plane.alive and before_end_timer is not None and before_end_timer + before_end_cooldown < time.time():
             defeat_screen(level)
-            return
+            return False
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -306,7 +305,7 @@ def play_level(level):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     if pause(level) == "quit":
-                        return
+                        return False
 
         mouse.draw()
         shader.draw(display)

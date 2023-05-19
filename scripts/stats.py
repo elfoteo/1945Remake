@@ -18,7 +18,8 @@ class Stats:
                 "ingame_coins": 0,
                 "dogtags": 100,
                 "dogtags_timestamp": round(time.time()),
-                "selected_plane": F_86_Sabre
+                "selected_plane": F_86_Sabre,
+                "level_reached": 1
             }
             pickle.dump(self.data, open("User Data/stats", "wb"))
         else:
