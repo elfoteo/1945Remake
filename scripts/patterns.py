@@ -83,6 +83,36 @@ def get_random(y, enemy, size, count, sep_y):
     return pattern
 
 
+def get_2x2_right(y, enemy, size):
+    pattern = []
+    base_x = display.get_width() - size[0] * 2 - 15
+    pattern.append(enemy([base_x, y]))
+    pattern.append(enemy([base_x, y+10+size[1]]))
+    pattern.append(enemy([base_x+size[0]+10, y]))
+    pattern.append(enemy([base_x+size[0]+10, y+10+size[1]]))
+    return pattern
+
+
+def get_2x2_left(y, enemy, size):
+    pattern = []
+    base_x = 5
+    pattern.append(enemy([base_x, y]))
+    pattern.append(enemy([base_x, y+10+size[1]]))
+    pattern.append(enemy([base_x+size[0]+10, y]))
+    pattern.append(enemy([base_x+size[0]+10, y+10+size[1]]))
+    return pattern
+
+
+def get_2x2_center(y, enemy, size):
+    pattern = []
+    base_x = display.get_width()/2-size[0]-5
+    pattern.append(enemy([base_x, y]))
+    pattern.append(enemy([base_x, y+10+size[1]]))
+    pattern.append(enemy([base_x+size[0]+10, y]))
+    pattern.append(enemy([base_x+size[0]+10, y+10+size[1]]))
+    return pattern
+
+
 def save(patterns, level_name="level1"):
     print(patterns)
     pickle.dump(patterns, open("levels/"+level_name+".lvl", "wb"))

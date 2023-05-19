@@ -32,8 +32,8 @@ projectiles.init(shader)  # initialize the projectiles module to load all images
 planes.init()  # initialize the plane module adding all planes to the "all_planes" list
 patterns.init(display)  # initialize the pattern module to place enemies more easly
 # load all images
-healthbar_img = load_image("sprites/ui/ingame/healthbar.png", 0.6)
-healthbar_frame_img = load_image("sprites/ui/ingame/healthbar_frame.png", 0.6)
+healthbar_img = load_image("sprites/ui/ingame/healthbar.png", 0.75)
+healthbar_frame_img = load_image("sprites/ui/ingame/healthbar_frame.png", 0.75)
 enemy_projectile_img = load_image("sprites/bombs/bullet_bomb/projectile.png")
 enemy_normal2_frames = load_animation_frames("sprites/enemies/enemy_normal2")
 enemy_normal_frames = load_animation_frames("sprites/enemies/enemy_normal")
@@ -100,10 +100,13 @@ pile_of_gems = load_image('sprites/ui/level/pile_of_gems.png', 1)
 italy_map = load_image('sprites/ui/map/italy_map.png', 1.22)
 level_icon = load_image('sprites/ui/map/level_icon.png', 0.65)
 locked_level_icon = load_image('sprites/ui/map/locked_level_icon.png', 0.65)
+rapid_fire_img = load_image('sprites/buffs/rapid_fire.png', 0.5)
+rapid_fire_pickup_img = load_image('sprites/buffs/rapid_fire_pickup.png', 0.5)
 visual_effects = []
 user_stats = Stats()
 scroll_speed = 0.35
 coins = []
+buffs_pickup = []
 
 font_small = pygame.font.Font("font/font.ttf", 16)
 font_medium_small = pygame.font.Font("font/font.ttf", 20)
@@ -176,6 +179,7 @@ class Player:
         self.auto_controlled = False
         self.auto_rel = [0, 0]
         self.is_dummy = False
+        self.buffs = []
 
     def reset(self):
         self.plane = user_stats.get_plane()(visual_effects)
@@ -187,19 +191,20 @@ class Player:
         self.auto_controlled = False
         self.auto_rel = [0, 0]
         self.is_dummy = False
+        self.buffs = []
 
     def refresh_plane(self):
         self.plane = user_stats.get_plane()(visual_effects)
 
     def draw_healthbar(self):
         healthbar_pos = 10, 10
-        healthbar_scale = 0.6
+        healthbar_scale = 0.75
         display.blit(healthbar_frame_img, (10, 10))
         # Cut the healthbar image blitting it in a smaller surface
         healthbar_surf = pygame.Surface((healthbar_img.get_width() * max(self.plane.health / self.plane.max_health, 0),
                                          healthbar_img.get_height()))
         healthbar_surf.blit(healthbar_img, (0, 0))
-        display.blit(healthbar_surf, (healthbar_pos[0] + 54 * healthbar_scale, healthbar_pos[1] + 24 * healthbar_scale))
+        display.blit(healthbar_surf, (healthbar_pos[0] + 53 * healthbar_scale, healthbar_pos[1] + 23 * healthbar_scale))
 
         if self.plane.health <= 0 and self.plane.alive:
             self.plane.alive = False
@@ -218,16 +223,20 @@ class Player:
 
     @staticmethod
     def draw_coins():
-        display.blit(ingame_coins_img, (display.get_width() - 50, 150))
+        display.blit(ingame_coins_img, (display.get_width() - 50, 25))
         text = outlined_text(str(user_stats.data["ingame_coins"]), font)
-        display.blit(text, (display.get_width() - 50 - text.get_width(), 150))
+        display.blit(text, (display.get_width() - 55 - text.get_width(), 25))
 
     def deal_damage(self, amount):
+        if amount <= 0:
+            amount = 0
         self.plane.health -= amount
         shader.red_overlay = 1
         shader.shake_amount += 1.5
 
     def draw(self):
+        if self.plane.health >= self.plane.max_health:
+            self.plane.health = self.plane.max_health
         if not self.auto_controlled:
             mx, my = mouse.rel
         else:
@@ -259,9 +268,99 @@ class Player:
             for box in self.plane.hitbox:
                 pygame.draw.rect(display, (255, 0, 0), (self.abs_pos[0] + box.x, self.abs_pos[1] + box.y, box.w, box.h))
 
+    def apply_buff(self, buff_type):
+        apply = True
+        for buff in self.buffs:
+            if type(buff) == buff_type:
+                buff.renew()
+                return
+        if apply:
+            self.buffs.append(buff_type())
+
     def draw_gui(self):
         self.draw_healthbar()
         self.draw_coins()
+        y = 80
+        x = 30
+        for buff in self.buffs:
+            buff.draw([x, y])
+            if not buff.active:
+                self.buffs.remove(buff)
+            y += 70
+
+
+class Buff:
+    def __init__(self, duration, image):
+        self.duration = duration
+        self.image = image
+        self.start_time = shader.get_ingame_time()
+        self.active = True
+        self.buff_applied()
+
+    def renew(self):
+        self.start_time = shader.get_ingame_time()
+
+    def draw(self, pos):
+        if shader.get_ingame_time() - self.start_time < self.duration:
+            self.active = True
+        else:
+            self.active = False
+            self.buff_expired()
+        surf = pygame.Surface((69, 69), pygame.SRCALPHA)
+        draw_pie_segment(surf, shader.get_ingame_time() - self.start_time, self.duration, (69 / 2, 69 / 2), 69)
+        surf.blit(self.image, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        display.blit(surf, pos)
+        if self.active:
+            self.on_buff_active_tick()
+
+    def buff_applied(self):
+        pass
+
+    def buff_expired(self):
+        pass
+
+    def on_buff_active_tick(self):
+        pass
+
+
+class RapidFireBuff(Buff):
+    def __init__(self):
+        duration = seconds_to_ticks(10)  # 10 seconds
+        image = rapid_fire_img
+        super().__init__(duration, image)
+
+    def buff_applied(self):
+        super().buff_applied()
+        player.plane.projectiles.cooldown /= 2
+
+    def buff_expired(self):
+        super().buff_expired()
+        player.plane.projectiles.cooldown *= 2
+
+
+class BuffPickup:
+    def __init__(self, pos, image, buff_type):
+        self.pos = pos
+        self.image = image
+        self.buff_type = buff_type
+        self.alive = True
+
+    def draw(self):
+        if self.alive:
+            self.pos[1] += scroll_speed + 0.15
+            hitbox = pygame.Rect((self.pos[0] - self.image.get_width() / 2, self.pos[1] - self.image.get_height() / 2,
+                                  self.image.get_width(), self.image.get_height()))
+            display.blit(self.image, (hitbox.x, hitbox.y))
+            if player.collides([hitbox]):
+                player.apply_buff(self.buff_type)
+                self.alive = False
+
+
+class RapidFirePickup(BuffPickup):
+    def __init__(self, pos):
+        image = rapid_fire_pickup_img
+        buff_type = RapidFireBuff
+        super().__init__(pos, image, buff_type)
 
 
 class Coin:
@@ -283,9 +382,9 @@ class Coin:
                     self.pos[1] - self.frames[self.index].get_height() / 2]
 
     def draw(self):
-        self.abs_pos = (self.pos[0] + self.frames[self.index].get_width() / 2,
-                        self.pos[1] + self.frames[self.index].get_height() / 2)
         if self.alive:
+            self.abs_pos = (self.pos[0] + self.frames[self.index].get_width() / 2,
+                            self.pos[1] + self.frames[self.index].get_height() / 2)
             self.pos[1] += scroll_speed + 0.15
             if self.last_frame + self.delay < shader.get_time():
                 if self.index + 1 >= len(self.frames):
@@ -394,6 +493,8 @@ class Enemy:
                               (self.get_width() / 4 * 2) * (self.health / self.max_health), 5))
 
     def on_death(self):
+        if random.randint(0, int(100-self.health)) == 1:
+            buffs_pickup.append(RapidFirePickup([self.pos[0]+self.image.get_width()/2, self.pos[1]+self.image.get_height()/2]))
         coins.append(Coin(1, [self.pos[0] + self.get_width() / 2, self.pos[1] + self.get_height() / 2]))
         if self.particles_on_death:
             for _ in range(2):
@@ -528,6 +629,10 @@ class RotatingEnemy(Enemy):
         super().__init__(speed, health, enemy_projectiles, image, pos, hitbox)
 
     def draw(self):
+        if self.pos[1] <= -50:
+            self.speed = 1
+        else:
+            self.speed = 1.5
         if self.next_frame + self.frame_delay <= shader.get_time():
             self.next_frame = shader.get_time()
             self.frame_index += 1
@@ -665,7 +770,7 @@ class BulletBomb(Enemy):
 class NuclearBomb(Enemy):
     def __init__(self, pos):
         speed = 1
-        health = 30
+        health = 20
         enemy_projectiles = EnemyProjectiles([], 0, display, 99999)
         image = nuclear_bomb_frames[0]
         self.image_scale = 1
@@ -685,7 +790,7 @@ class NuclearBomb(Enemy):
                 enemy.health -= distance_between_points(enemy.pos, self.pos) * -1 + 400
 
         if distance_between_points(player.pos, self.pos) <= 350:
-            player.deal_damage(distance_between_points(player.pos, self.pos) * -1 + 385)
+            player.deal_damage(distance_between_points(player.pos, self.pos) * -1 + 325)
 
         anim = []
         for i in death_frames[0]:
@@ -750,7 +855,7 @@ class LevelButton(Button):
         x = x * 1.22
         y = y * 1.22
         self.texture_locked = locked_level_icon.copy()
-        self.reached = lambda: user_stats.data["level_reached"]-1 >= int(self.level_number)
+        self.reached = lambda: user_stats.data["level_reached"] - 1 >= int(self.level_number)
         super().__init__(x, y, level_icon.get_width(), level_icon.get_height(), level_icon)
         self.rect.center = (x - 18, y)
 
@@ -802,19 +907,37 @@ class LevelButton(Button):
     def get_center(self, map_pos):
         self.rect.x += round(map_pos[0])
         self.rect.y += round(map_pos[1])
-        res = self.rect.x + 83*0.65, self.rect.y+35*0.65
+        res = self.rect.x + 83 * 0.65, self.rect.y + 35 * 0.65
         self.rect.x -= round(map_pos[0])
         self.rect.y -= round(map_pos[1])
         return res
 
     def get_level(self):
         level_data = []
-        level_data.append([patterns.get_line_right, [-250, NormalEnemy, enemy_normal_frames[0].get_size(), 10, 50]])
-        level_data.append([patterns.get_line_left, [-1250, NormalEnemy2, enemy_normal2_frames[0].get_size(), 10, 50]])
-        level_data.append([patterns.get_random, [-2500, NormalEnemy2, enemy_normal_frames[0].get_size(), 10, 150]])
-        patterns.save(level_data, "level"+self.level_number)
+        print(get_level_phase(1), get_level_phase(2), get_level_phase(3))
+        level_data.append(
+            [patterns.get_line_right, [get_level_phase(1), NormalEnemy, enemy_normal_frames[0].get_size(), 10, 50]])
+        level_data.append(
+            [patterns.get_line_left, [get_level_phase(2), NormalEnemy2, enemy_normal2_frames[0].get_size(), 10, 50]])
+        level_data.append(
+            [patterns.get_random, [get_level_phase(3.6), RotatingEnemy, enemy_normal_frames[0].get_size(), 10, 100]])
+        level_data.append(
+            [patterns.get_2x2_right, [get_level_phase(5.7), NormalEnemy, enemy_normal_frames[0].get_size()]])
+        level_data.append(
+            [patterns.get_2x2_left, [get_level_phase(5.7), NormalEnemy, enemy_normal_frames[0].get_size()]])
+        level_data.append(
+            [patterns.get_2x2_center, [get_level_phase(5.7), NormalEnemy, enemy_normal_frames[0].get_size()]])
+        level_data.append(
+            [patterns.get_nuclear_center,
+             [get_level_phase(5.5), NormalEnemy2, NuclearBomb, enemy_normal_frames[0].get_size(),
+              nuclear_bomb_frames[0].get_size()]])
+        level_data.append(
+            [patterns.get_2x2_center, [get_level_phase(5.2), NormalEnemy, enemy_normal_frames[0].get_size()]])
+        patterns.save(level_data, "level" + self.level_number)
         enemies.clear()
-        enemies.extend(patterns.load("level"+self.level_number))
+        coins.clear()
+        buffs_pickup.clear()
+        enemies.extend(patterns.load("level" + self.level_number))
         return Level(enemies, int(self.level_number), 1, "sprites/background/desert.png")
 
 
@@ -822,4 +945,3 @@ mouse = Mouse()
 player = Player()
 enemies = []
 levels = [LevelButton(198, 114, 1), LevelButton(200, 200, 2), LevelButton(260, 240, 3)]
-

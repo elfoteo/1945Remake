@@ -72,6 +72,39 @@ def transparent_rect(size, intensity):
     return transparent_texture
 
 
+def get_level_phase(num):
+    return -500 - 1000 * (num - 1)
+
+
+def seconds_to_ticks(seconds):
+    return 120*10*seconds
+
+
+def draw_pie_segment(surf, val, total, pos, radius):
+    # Clear the screen
+    surf.fill((0, 0, 0))
+
+    # Background circle
+    pygame.draw.circle(surf, (255, 255, 255), (pos[0], pos[1]), radius)
+
+    # Calculate the angle in degrees
+    angle = val * 360 / total
+
+    # Start list of polygon points
+    p = [(pos[0], pos[1])]
+
+    # Get points on arc
+    for n in range(-90, round(angle)-90):
+        x = pos[0] + int((radius+0.7) * math.cos(n * math.pi / 180))
+        y = pos[1] + int((radius+0.7) * math.sin(n * math.pi / 180))
+        p.append((x, y))
+    p.append((pos[0], pos[1]))
+
+    # Draw pie segment
+    if len(p) > 2:
+        pygame.draw.polygon(surf, (50, 50, 50), p)
+
+
 def _quit():
     pygame.quit()
     sys.exit()

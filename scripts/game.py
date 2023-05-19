@@ -243,6 +243,11 @@ def play_level(level):
             if not coin.alive:
                 coins.remove(coin)
 
+        for buff_pickup in buffs_pickup:
+            buff_pickup.draw()
+            if not buff_pickup.alive:
+                buffs_pickup.remove(buff_pickup)
+
         new_enemies = level.enemies.copy()
         for enemy in level.enemies:
             enemy.draw()
