@@ -102,6 +102,10 @@ level_icon = load_image('sprites/ui/map/level_icon.png', 0.65)
 locked_level_icon = load_image('sprites/ui/map/locked_level_icon.png', 0.65)
 rapid_fire_img = load_image('sprites/buffs/rapid_fire.png', 0.5)
 rapid_fire_pickup_img = load_image('sprites/buffs/rapid_fire_pickup.png', 0.5)
+protection_img = load_image('sprites/buffs/protection.png', 0.5)
+protection_pickup_img = load_image('sprites/buffs/protection_pickup.png', 0.5)
+magnet_img = load_image('sprites/buffs/magnet.png', 0.5)
+magnet_pickup_img = load_image('sprites/buffs/magnet_pickup.png', 0.5)
 visual_effects = []
 user_stats = Stats()
 scroll_speed = 0.35
@@ -193,6 +197,12 @@ class Player:
         self.is_dummy = False
         self.buffs = []
 
+    def has_buff(self, buff_type) -> bool:
+        for buff in self.buffs:
+            if type(buff) == buff_type:
+                return True
+        return False
+
     def refresh_plane(self):
         self.plane = user_stats.get_plane()(visual_effects)
 
@@ -229,10 +239,13 @@ class Player:
 
     def deal_damage(self, amount):
         if amount <= 0:
-            amount = 0
-        self.plane.health -= amount
-        shader.red_overlay = 1
-        shader.shake_amount += 1.5
+            return
+        if not self.has_buff(ProtectionBuff):
+            shader.shake_amount += 1.5
+            self.plane.health -= amount
+            shader.red_overlay = 1
+        else:
+            shader.shake_amount += 0.75  # reduce shake amount if the player has the protection buff
 
     def draw(self):
         if self.plane.health >= self.plane.max_health:
@@ -338,6 +351,28 @@ class RapidFireBuff(Buff):
         player.plane.projectiles.cooldown *= 2
 
 
+class MagnetBuff(Buff):
+    def __init__(self):
+        duration = seconds_to_ticks(10)  # 10 seconds
+        image = magnet_img
+        super().__init__(duration, image)
+
+    def buff_applied(self):
+        super().buff_applied()
+        player.coins_pickup_distance *= 3
+
+    def buff_expired(self):
+        super().buff_expired()
+        player.coins_pickup_distance /= 3
+
+
+class ProtectionBuff(Buff):
+    def __init__(self):
+        duration = seconds_to_ticks(10)  # 10 seconds
+        image = protection_img
+        super().__init__(duration, image)
+
+
 class BuffPickup:
     def __init__(self, pos, image, buff_type):
         self.pos = pos
@@ -360,6 +395,20 @@ class RapidFirePickup(BuffPickup):
     def __init__(self, pos):
         image = rapid_fire_pickup_img
         buff_type = RapidFireBuff
+        super().__init__(pos, image, buff_type)
+
+
+class MagnetPickup(BuffPickup):
+    def __init__(self, pos):
+        image = magnet_pickup_img
+        buff_type = MagnetBuff
+        super().__init__(pos, image, buff_type)
+
+
+class ProtectionPickup(BuffPickup):
+    def __init__(self, pos):
+        image = protection_pickup_img
+        buff_type = ProtectionBuff
         super().__init__(pos, image, buff_type)
 
 
@@ -493,7 +542,7 @@ class Enemy:
                               (self.get_width() / 4 * 2) * (self.health / self.max_health), 5))
 
     def on_death(self):
-        if random.randint(0, int(100-self.health)) == 1:
+        if random.randint(0, max(2, int(100-self.health*2))) == 1:
             buffs_pickup.append(RapidFirePickup([self.pos[0]+self.image.get_width()/2, self.pos[1]+self.image.get_height()/2]))
         coins.append(Coin(1, [self.pos[0] + self.get_width() / 2, self.pos[1] + self.get_height() / 2]))
         if self.particles_on_death:
