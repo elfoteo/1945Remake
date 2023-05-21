@@ -72,7 +72,9 @@ level_defeated = load_image("sprites/ui/level/defeated.png", 1.2)
 ui_background = load_image("sprites/ui/ui_background.png", display.get_size(), no_scale_by=True, alpha=False)
 
 coin_icon = load_image("sprites/ui/coin.png", 1)
+small_coin_icon = load_image("sprites/ui/coin.png", 0.85)
 gem_icon = load_image("sprites/ui/gem.png", 1)
+small_gem_icon = load_image("sprites/ui/gem.png", 0.85)
 dogtag_icon = load_image("sprites/ui/dogtag.png", 1)
 buy_dogtags = load_image("sprites/ui/buy_dogtags.png", 0.9)
 popup_bg = load_image("sprites/ui/buy_dogtags.png", 0.9)
@@ -87,12 +89,14 @@ gui_close_hover = load_image("sprites/ui/gui_close_hover.png", 1.1)
 gui_parking_area = load_image("sprites/ui/parking_area.png", 1.1)
 arrow_back = load_image("sprites/ui/arrow_back.png", 1.25)
 planes_gui_plane_station = load_image("sprites/ui/planes/plane_station.png", 1.2)
+plane_star_rank = load_image("sprites/ui/planes/star_rank.png", 0.75)
 planes_gui_container = load_image("sprites/ui/planes/plane_container.png", 1.135)
 planes_gui_progressbar_container = load_image("sprites/ui/planes/progressbar_container.png", 1.22)
 planes_gui_plane_name_label = load_image("sprites/ui/planes/plane_name_label.png", 1.1)
 planes_gui_not_selected_plane = load_image("sprites/ui/planes/not_selected_plane.png", 0.435)
 planes_gui_not_unlocked_plane = load_image("sprites/ui/planes/not_unlocked_plane.png", 0.435)
 planes_gui_selected_plane = load_image("sprites/ui/planes/selected_plane.png", 0.435)
+planes_gui_not_unlocked_selected_plane = load_image("sprites/ui/planes/not_unlocked_selected_plane.png", 0.435)
 planes_gui_arrow_back_frame = load_image("sprites/ui/planes/arrow_back_frame.png", 1.2)
 green_button = load_image('sprites/ui/green_button.png', 1.5)
 pile_of_coins = load_image('sprites/ui/level/pile_of_coins.png', 1)
@@ -174,7 +178,8 @@ class Player:
         self.window = pygame.Rect((0, 0,
                                    display.get_width(),
                                    display.get_height()))
-        self.plane = user_stats.get_plane()(visual_effects)
+        level = user_stats.data["planes"][user_stats.get_plane()][1]
+        self.plane = user_stats.get_plane()(visual_effects, level)
         self.default_spawn_pos = [display.get_width() / 2, display.get_height() - self.plane.image.get_height() * 4]
         self.pos = self.default_spawn_pos
         self.abs_pos = self.pos
@@ -186,7 +191,8 @@ class Player:
         self.buffs = []
 
     def reset(self):
-        self.plane = user_stats.get_plane()(visual_effects)
+        level = user_stats.data["planes"][user_stats.get_plane()][1]
+        self.plane = user_stats.get_plane()(visual_effects, level)
         self.default_spawn_pos = [display.get_width() / 2, display.get_height() - self.plane.image.get_height() * 4]
         self.pos = self.default_spawn_pos
         self.abs_pos = self.pos
@@ -204,7 +210,7 @@ class Player:
         return False
 
     def refresh_plane(self):
-        self.plane = user_stats.get_plane()(visual_effects)
+        self.plane = user_stats.get_plane()(visual_effects, user_stats.data["planes"][user_stats.get_plane()][1])
 
     def draw_healthbar(self):
         healthbar_pos = 10, 10
@@ -359,11 +365,11 @@ class MagnetBuff(Buff):
 
     def buff_applied(self):
         super().buff_applied()
-        player.coins_pickup_distance *= 3
+        player.coins_pickup_distance *= 5
 
     def buff_expired(self):
         super().buff_expired()
-        player.coins_pickup_distance /= 3
+        player.coins_pickup_distance /= 5
 
 
 class ProtectionBuff(Buff):
@@ -518,6 +524,7 @@ class Enemy:
         self.particles_on_death = particles_on_death
         self.auto_shoot = auto_shoot
         self.auto_move = auto_move
+        self.dropped_coins = 1
 
     def get_width(self):
         return self.image.get_width()
@@ -542,9 +549,12 @@ class Enemy:
                               (self.get_width() / 4 * 2) * (self.health / self.max_health), 5))
 
     def on_death(self):
-        if random.randint(0, max(2, int(100-self.health*2))) == 1:
-            buffs_pickup.append(RapidFirePickup([self.pos[0]+self.image.get_width()/2, self.pos[1]+self.image.get_height()/2]))
-        coins.append(Coin(1, [self.pos[0] + self.get_width() / 2, self.pos[1] + self.get_height() / 2]))
+        if random.randint(0, max(2, int(100-self.health*2))) == 0:
+            pos = [self.pos[0]+self.image.get_width()/2, self.pos[1]+self.image.get_height()/2]
+            buff_list = [RapidFirePickup, ProtectionPickup, MagnetPickup]
+            buffs_pickup.append(random.choice(buff_list)(pos))
+        else:
+            coins.append(Coin(self.dropped_coins, [self.pos[0] + self.get_width() / 2, self.pos[1] + self.get_height() / 2]))
         if self.particles_on_death:
             for _ in range(2):
                 visual_effects.append(

@@ -282,8 +282,8 @@ class BlackWidowProjectiles(Projectiles):
         self.image_scale = image_scale
         super().__init__(guns, image, speed, cooldown, dmg, vfx, anchor)
 
-    def shoot(self, x, y):
-        if shader.get_ingame_time() > self.last_shoot + self.cooldown:
+    def shoot(self, x, y, cooldown_multiplier):
+        if shader.get_ingame_time() > self.last_shoot + self.cooldown*cooldown_multiplier:
             for gun in self.guns:
                 c = 0
                 for i in range(3):

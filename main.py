@@ -60,15 +60,24 @@ arrow_back_btn = Button(57 * 1.2 - 40, display.get_height() - planes_gui_arrow_b
 plane_vfx = []
 plane_parking_scale = 1.3
 
-current_plane = user_stats.get_plane()(plane_vfx)
-map_pos = (0, display.get_height()-italy_map.get_height()-planes_gui_arrow_back_frame.get_height()/2)
+plane_level = user_stats.data["planes"][user_stats.get_plane()][1]
+current_plane = user_stats.get_plane()(plane_vfx, plane_level)
+previous_plane = current_plane
+map_pos = (0, display.get_height() - italy_map.get_height() - planes_gui_arrow_back_frame.get_height() / 2)
 # 0: main gui, 1 dogtags shop, 2 planes menu, 3 level selection
 current_gui = 0
 blit_main_gui = True
 was_mouse_button_down = False
 mouse_button_up_event = False
-# Drawing all main-menu GUIs it may seem complex but is really easy,
-# the difficult part is to position all the elements
+# Drawing all main-menu GUI/s components
+surf = pygame.Surface((101, 30), pygame.SRCALPHA)
+surf.fill((0, 0, 0, 0))
+upgrade_button = Button(display.get_width() / 2 - planes_gui_progressbar_container.get_width() / 2+43,
+                        display.get_height() - planes_gui_container.get_height() - planes_gui_progressbar_container.get_height()+52,
+                        101, 30, surf, "", font="font/font.ttf", increase_font_size=0.25)
+surf = pygame.Surface((101, 30), pygame.SRCALPHA)
+surf.fill((0, 0, 0, 50))
+upgrade_button.texture_down = surf
 
 while True:
     plane_surf = pygame.Surface(current_plane.image.get_size(), pygame.SRCALPHA)
@@ -129,19 +138,27 @@ while True:
         plane_img_scale = 0.435
         for plane in all_planes:
             if plane.name != current_plane.name:
+                is_plane_unlocked = user_stats.data["planes"][type(plane)][0]
                 base_coord = (5 + x * 237 * plane_img_scale,
                               display.get_height() - planes_gui_container.get_height() + planes_gui_plane_name_label.get_height() + 2 + y * 246 * plane_img_scale)
-                display.blit(planes_gui_not_selected_plane, base_coord)
+                display.blit(planes_gui_not_selected_plane if is_plane_unlocked else planes_gui_not_unlocked_plane,
+                             base_coord)
                 display.blit(plane.icon, (
                     base_coord[0] + planes_gui_not_selected_plane.get_width() / 2 - plane.icon.get_width() / 2,
                     base_coord[1] + planes_gui_not_selected_plane.get_height() / 2 - plane.icon.get_height() / 2 - 10))
-                if mouse_button_up_event and not was_mouse_button_down and\
+                for i in range(plane.rank):
+                    display.blit(plane_star_rank, (base_coord[0] + planes_gui_not_selected_plane.get_width() / 2 - plane.icon.get_width() / 2 + i*10,
+                                                   base_coord[1] + planes_gui_not_selected_plane.get_height()-26))
+                if mouse_button_up_event and not was_mouse_button_down and \
                         pygame.Rect(base_coord[0],
                                     base_coord[1],
                                     planes_gui_not_selected_plane.get_width(),
                                     planes_gui_not_selected_plane.get_height()).collidepoint(mouse.get_pos()):
                     plane_vfx = []
-                    current_plane = type(plane)(plane_vfx)
+                    if is_plane_unlocked:  # if the player has unlocked the plane we change his previous plane to be the current last plane
+                        previous_plane = current_plane
+                    level = user_stats.data["planes"][type(plane)][1]
+                    current_plane = type(plane)(plane_vfx, level)
                     user_stats.set_plane(type(plane))
                     player.refresh_plane()
             x += 1
@@ -155,14 +172,19 @@ while True:
         y = 0
         for plane in all_planes:
             if plane.name == current_plane.name:
+                is_plane_unlocked = user_stats.data["planes"][type(plane)][0]
                 base_coord = (5 + x * 237 * plane_img_scale,
                               display.get_height() - planes_gui_container.get_height() + planes_gui_plane_name_label.get_height() + 2 + y * 246 * plane_img_scale)
-                display.blit(planes_gui_selected_plane, (5 + x * 237 * plane_img_scale,
-                                                         display.get_height() - planes_gui_container.get_height() + planes_gui_plane_name_label.get_height() + 2 + y * 246 * plane_img_scale))
+                display.blit(planes_gui_selected_plane if is_plane_unlocked else planes_gui_not_unlocked_selected_plane,
+                             (5 + x * 237 * plane_img_scale,
+                              display.get_height() - planes_gui_container.get_height() + planes_gui_plane_name_label.get_height() + 2 + y * 246 * plane_img_scale))
                 new_icon = pygame.transform.scale_by(plane.icon, 1.07)
                 display.blit(plane.icon, (
                     base_coord[0] + planes_gui_not_selected_plane.get_width() / 2 - plane.icon.get_width() / 2,
                     base_coord[1] + planes_gui_not_selected_plane.get_height() / 2 - plane.icon.get_height() / 2 - 10))
+                for i in range(plane.rank):
+                    display.blit(plane_star_rank, (base_coord[0] + planes_gui_not_selected_plane.get_width() / 2 - plane.icon.get_width() / 2 + i*10,
+                                                   base_coord[1] + planes_gui_not_selected_plane.get_height()-26))
 
             x += 1
             if x >= 4:
@@ -179,6 +201,19 @@ while True:
         display.blit(planes_gui_progressbar_container, (
             display.get_width() / 2 - planes_gui_progressbar_container.get_width() / 2,
             display.get_height() - planes_gui_container.get_height() - planes_gui_progressbar_container.get_height()))
+        # upgrade button
+        upgrade_button.draw(display)
+        is_selected_plane_unlocked = user_stats.data["planes"][type(current_plane)][0]
+        if not is_selected_plane_unlocked:
+            buy_cost = int(100 + current_plane.rank * 50)
+            upgrade_button.text = str(buy_cost)+" "*2
+            display.blit(small_gem_icon, (upgrade_button.rect.centerx + 20, upgrade_button.rect.centery - small_gem_icon.get_height() / 2))
+        else:
+            upgrade_cost = int(250+current_plane.level*300+current_plane.rank*current_plane.level/2)
+            upgrade_button.text = str(upgrade_cost)+" "*2
+            display.blit(small_coin_icon, (upgrade_button.rect.centerx+20, upgrade_button.rect.centery-small_coin_icon.get_height()/2))
+
+        # arrow back
         display.blit(planes_gui_arrow_back_frame,
                      (-40, display.get_height() - planes_gui_arrow_back_frame.get_height()))
         arrow_back_btn.draw(display)
@@ -196,8 +231,9 @@ while True:
         display.blit(italy_map, map_pos)
         c = 0
         for level in levels:
-            if level.reached() and c < len(levels)-1:
-                line_of_points(display, (12, 255, 47), level.get_center(map_pos), levels[c+1].get_center(map_pos), width=1, dash_length=2, blank_length=6)
+            if level.reached() and c < len(levels) - 1:
+                line_of_points(display, (12, 255, 47), level.get_center(map_pos), levels[c + 1].get_center(map_pos),
+                               width=1, dash_length=2, blank_length=6)
             level.draw(display, map_pos)
             c += 1
 
@@ -208,24 +244,16 @@ while True:
     mouse_button_up_event = False
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            is_selected_plane_unlocked = user_stats.data["planes"][type(current_plane)][0]
+            if not is_selected_plane_unlocked:
+                current_plane = previous_plane
+                user_stats.data["selected_plane"] = type(current_plane)
             quit_game()
 
         if current_gui == 0:
             if singleplayer_button.handle_event(event):
                 current_gui = 3
                 blit_main_gui = False
-                # if user_stats.can_purchase("dogtags", 5):
-                #     user_stats.data["dogtags"] -= 5
-                    # patterns.save([[patterns.get_nuclear_right,
-                    #                 [-200, NormalEnemy2, BulletBomb, enemy_normal2_frames[0].get_size(),
-                    #                  bullet_bomb_frames[0].get_size()]]], "level1")
-                    # enemies.clear()
-                    # enemies.extend(patterns.load("level1"))
-                    # level1 = Level(enemies, 1, 1, "sprites/background/desert.png")
-
-                    # play_level(level1)
-                # elif not user_stats.can_purchase("dogtags", 5):
-                #     current_gui = 1
             if parking_area_1.handle_event(event):
                 current_gui = 2
                 blit_main_gui = False
@@ -244,6 +272,14 @@ while True:
                 current_gui = 0
         elif current_gui == 2 or current_gui == 3:
             if arrow_back_btn.handle_event(event):
+                if current_gui == 2:  # if the user presses the arrow back button and is in the plane selection gui we
+                    # we check if it has unlocked the selected plane if not then we reset it to a plane it has unlocked
+
+                    is_selected_plane_unlocked = user_stats.data["planes"][type(current_plane)][0]
+                    if not is_selected_plane_unlocked:
+                        current_plane = previous_plane
+                        user_stats.data["selected_plane"] = type(current_plane)
+                        plane_vfx = []
                 current_gui = 0
                 blit_main_gui = True
         if current_gui == 3:
@@ -260,6 +296,23 @@ while True:
                         current_gui = 1
                         blit_main_gui = True
 
+        elif current_gui == 2:
+            if upgrade_button.handle_event(event):
+                is_selected_plane_unlocked = user_stats.data["planes"][type(current_plane)][0]
+                # TODO: add sfx and particles
+                if not is_selected_plane_unlocked:
+                    buy_cost = int(100 + current_plane.rank * 50)
+                    if user_stats.can_purchase("gems", buy_cost):
+                        user_stats.data["gems"] -= buy_cost
+                        user_stats.data["planes"][type(current_plane)][0] = True
+                else:
+                    upgrade_cost = int(250+current_plane.level*300+current_plane.rank*current_plane.level/2)
+                    if user_stats.can_purchase("coins", upgrade_cost):
+                        user_stats.data["coins"] -= upgrade_cost  # TODO: add level and purchase
+                        user_stats.data["planes"][type(current_plane)][1] += 1
+                        current_plane.level += 1
+                player.refresh_plane()
+
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
                 if dogtags_plus_rect.collidepoint(mouse.get_pos()):
@@ -273,6 +326,11 @@ while True:
                 elif current_gui == 2:
                     current_gui = 0
                     blit_main_gui = True
+                    is_selected_plane_unlocked = user_stats.data["planes"][type(current_plane)][0]
+                    if not is_selected_plane_unlocked:
+                        current_plane = previous_plane
+                        user_stats.data["selected_plane"] = type(current_plane)
+                        plane_vfx = []
 
     if current_gui == 0:
         blit_main_gui = True

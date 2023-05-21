@@ -18,8 +18,17 @@ class Stats:
                 "ingame_coins": 0,
                 "dogtags": 100,
                 "dogtags_timestamp": round(time.time()),
-                "selected_plane": F_86_Sabre,
-                "level_reached": 1
+                "selected_plane": GrummanF3F,
+                "level_reached": 1,
+                "planes": {
+                    # plane: [unlocked, level]
+                    GrummanF3F: [True, 0],
+                    Boeing_P26_Peashooter: [True, 0],
+                    SEPECAT_Jaguar: [False, 0],
+                    ARSENAL_Delanne_10: [False, 0],
+                    P_61_Black_Widow: [False, 0],
+                    F_86_Sabre: [False, 0]
+                }
             }
             pickle.dump(self.data, open("User Data/stats", "wb"))
         else:
